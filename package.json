@@ -1,15 +1,20 @@
 {
   "name": "webchatproject",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "即時聊天應用程式",
+  "main": "backend/server.js",
   "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["websocket", "chat", "realtime"],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
