@@ -1,0 +1,831 @@
+/* frontend/assets/css/themes.css */
+
+/* Light Theme (Default) */
+.theme-light {
+    /* Primary Colors */
+    --primary-color: #667eea;
+    --primary-dark: #5a67d8;
+    --primary-light: #a3bffa;
+    --secondary-color: #764ba2;
+    --accent-color: #f093fb;
+
+    /* Neutral Colors */
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+
+    /* Status Colors */
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --info-color: #3b82f6;
+
+    /* Background Colors */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(0, 0, 0, 0.5);
+
+    /* Text Colors */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-500);
+
+    /* Border Colors */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Message Bubble Colors */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: rgba(0, 0, 0, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Dark Theme */
+.theme-dark {
+    /* Primary Colors - Slightly muted for dark theme */
+    --primary-color: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #8b5cf6;
+    --secondary-color: #7c3aed;
+    --accent-color: #ec4899;
+
+    /* Dark Neutral Colors */
+    --white: #ffffff;
+    --gray-50: #18181b;
+    --gray-100: #27272a;
+    --gray-200: #3f3f46;
+    --gray-300: #52525b;
+    --gray-400: #71717a;
+    --gray-500: #a1a1aa;
+    --gray-600: #d4d4d8;
+    --gray-700: #e4e4e7;
+    --gray-800: #f4f4f5;
+    --gray-900: #fafafa;
+
+    /* Status Colors - Adjusted for dark theme */
+    --success-color: #22c55e;
+    --warning-color: #eab308;
+    --error-color: #f87171;
+    --info-color: #60a5fa;
+
+    /* Dark Background Colors */
+    --bg-primary: #0f0f0f;
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(0, 0, 0, 0.8);
+
+    /* Dark Text Colors */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--gray-50);
+    --text-muted: var(--gray-500);
+
+    /* Dark Border Colors */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Dark Message Bubble Colors */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--gray-100);
+    --bubble-system: var(--gray-200);
+
+    /* Dark Chat Colors */
+    --chat-bg: var(--bg-primary);
+    --message-hover: rgba(255, 255, 255, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--gray-50);
+}
+
+/* High Contrast Theme */
+.theme-high-contrast {
+    /* High Contrast Colors */
+    --primary-color: #0000ff;
+    --primary-dark: #000080;
+    --primary-light: #4040ff;
+    --secondary-color: #800080;
+    --accent-color: #ff00ff;
+
+    /* High Contrast Neutrals */
+    --white: #ffffff;
+    --gray-50: #f8f8f8;
+    --gray-100: #e8e8e8;
+    --gray-200: #d0d0d0;
+    --gray-300: #b0b0b0;
+    --gray-400: #808080;
+    --gray-500: #606060;
+    --gray-600: #404040;
+    --gray-700: #303030;
+    --gray-800: #202020;
+    --gray-900: #000000;
+
+    /* High Contrast Status Colors */
+    --success-color: #008000;
+    --warning-color: #ff8000;
+    --error-color: #ff0000;
+    --info-color: #0080ff;
+
+    /* High Contrast Backgrounds */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(0, 0, 0, 0.8);
+
+    /* High Contrast Text */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-700);
+    --text-tertiary: var(--gray-600);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-600);
+
+    /* High Contrast Borders */
+    --border-light: var(--gray-400);
+    --border-medium: var(--gray-600);
+    --border-dark: var(--gray-800);
+
+    /* High Contrast Message Bubbles */
+    --bubble-own: var(--primary-color);
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* High Contrast Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: var(--gray-100);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Sepia Theme */
+.theme-sepia {
+    /* Sepia Colors */
+    --primary-color: #8b4513;
+    --primary-dark: #654321;
+    --primary-light: #daa520;
+    --secondary-color: #a0522d;
+    --accent-color: #cd853f;
+
+    /* Sepia Neutrals */
+    --white: #faf6f0;
+    --gray-50: #f5f1eb;
+    --gray-100: #ede8e0;
+    --gray-200: #e0d9ce;
+    --gray-300: #d1c7b7;
+    --gray-400: #b8aa97;
+    --gray-500: #9c8b73;
+    --gray-600: #7a6b56;
+    --gray-700: #5d5043;
+    --gray-800: #433a30;
+    --gray-900: #2d251e;
+
+    /* Sepia Status Colors */
+    --success-color: #6b8e23;
+    --warning-color: #daa520;
+    --error-color: #cd5c5c;
+    --info-color: #4682b4;
+
+    /* Sepia Backgrounds */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(45, 37, 30, 0.5);
+
+    /* Sepia Text */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-500);
+
+    /* Sepia Borders */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Sepia Message Bubbles */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* Sepia Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: rgba(139, 69, 19, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Ocean Theme */
+.theme-ocean {
+    /* Ocean Colors */
+    --primary-color: #0ea5e9;
+    --primary-dark: #0284c7;
+    --primary-light: #38bdf8;
+    --secondary-color: #06b6d4;
+    --accent-color: #22d3ee;
+
+    /* Ocean Neutrals */
+    --white: #f0f9ff;
+    --gray-50: #f0f9ff;
+    --gray-100: #e0f2fe;
+    --gray-200: #bae6fd;
+    --gray-300: #7dd3fc;
+    --gray-400: #38bdf8;
+    --gray-500: #0ea5e9;
+    --gray-600: #0284c7;
+    --gray-700: #0369a1;
+    --gray-800: #075985;
+    --gray-900: #0c4a6e;
+
+    /* Ocean Status Colors */
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --error-color: #dc2626;
+    --info-color: var(--primary-color);
+
+    /* Ocean Backgrounds */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(12, 74, 110, 0.5);
+
+    /* Ocean Text */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-500);
+
+    /* Ocean Borders */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Ocean Message Bubbles */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* Ocean Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: rgba(14, 165, 233, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Forest Theme */
+.theme-forest {
+    /* Forest Colors */
+    --primary-color: #16a34a;
+    --primary-dark: #15803d;
+    --primary-light: #4ade80;
+    --secondary-color: #059669;
+    --accent-color: #10b981;
+
+    /* Forest Neutrals */
+    --white: #f0fdf4;
+    --gray-50: #f0fdf4;
+    --gray-100: #dcfce7;
+    --gray-200: #bbf7d0;
+    --gray-300: #86efac;
+    --gray-400: #4ade80;
+    --gray-500: #22c55e;
+    --gray-600: #16a34a;
+    --gray-700: #15803d;
+    --gray-800: #166534;
+    --gray-900: #14532d;
+
+    /* Forest Status Colors */
+    --success-color: var(--primary-color);
+    --warning-color: #ca8a04;
+    --error-color: #dc2626;
+    --info-color: #2563eb;
+
+    /* Forest Backgrounds */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(20, 83, 45, 0.5);
+
+    /* Forest Text */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-500);
+
+    /* Forest Borders */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Forest Message Bubbles */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* Forest Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: rgba(22, 163, 74, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Sunset Theme */
+.theme-sunset {
+    /* Sunset Colors */
+    --primary-color: #f97316;
+    --primary-dark: #ea580c;
+    --primary-light: #fb923c;
+    --secondary-color: #dc2626;
+    --accent-color: #fbbf24;
+
+    /* Sunset Neutrals */
+    --white: #fffbeb;
+    --gray-50: #fffbeb;
+    --gray-100: #fef3c7;
+    --gray-200: #fde68a;
+    --gray-300: #fcd34d;
+    --gray-400: #fbbf24;
+    --gray-500: #f59e0b;
+    --gray-600: #d97706;
+    --gray-700: #b45309;
+    --gray-800: #92400e;
+    --gray-900: #78350f;
+
+    /* Sunset Status Colors */
+    --success-color: #059669;
+    --warning-color: var(--primary-color);
+    --error-color: var(--secondary-color);
+    --info-color: #3b82f6;
+
+    /* Sunset Backgrounds */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(120, 53, 15, 0.5);
+
+    /* Sunset Text */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-500);
+
+    /* Sunset Borders */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Sunset Message Bubbles */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* Sunset Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: rgba(249, 115, 22, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Purple Theme */
+.theme-purple {
+    /* Purple Colors */
+    --primary-color: #8b5cf6;
+    --primary-dark: #7c3aed;
+    --primary-light: #a78bfa;
+    --secondary-color: #c084fc;
+    --accent-color: #e879f9;
+
+    /* Purple Neutrals */
+    --white: #faf5ff;
+    --gray-50: #faf5ff;
+    --gray-100: #f3e8ff;
+    --gray-200: #e9d5ff;
+    --gray-300: #d8b4fe;
+    --gray-400: #c084fc;
+    --gray-500: #a855f7;
+    --gray-600: #9333ea;
+    --gray-700: #7c3aed;
+    --gray-800: #6b21a8;
+    --gray-900: #581c87;
+
+    /* Purple Status Colors */
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --error-color: #dc2626;
+    --info-color: #3b82f6;
+
+    /* Purple Backgrounds */
+    --bg-primary: var(--white);
+    --bg-secondary: var(--gray-50);
+    --bg-tertiary: var(--gray-100);
+    --bg-accent: var(--primary-color);
+    --bg-overlay: rgba(88, 28, 135, 0.5);
+
+    /* Purple Text */
+    --text-primary: var(--gray-900);
+    --text-secondary: var(--gray-600);
+    --text-tertiary: var(--gray-400);
+    --text-inverse: var(--white);
+    --text-muted: var(--gray-500);
+
+    /* Purple Borders */
+    --border-light: var(--gray-200);
+    --border-medium: var(--gray-300);
+    --border-dark: var(--gray-400);
+
+    /* Purple Message Bubbles */
+    --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --bubble-other: var(--white);
+    --bubble-system: var(--gray-200);
+
+    /* Purple Chat Colors */
+    --chat-bg: var(--gray-50);
+    --message-hover: rgba(139, 92, 246, 0.05);
+    --sidebar-bg: var(--gray-50);
+    --header-bg: var(--white);
+}
+
+/* Theme Transition */
+* {
+    transition: background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Theme-specific Component Overrides */
+
+/* Dark theme specific adjustments */
+.theme-dark .welcome-screen {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.theme-dark .messages-container {
+    background-color: var(--bg-primary);
+}
+
+.theme-dark .message:not(.own) .message-bubble {
+    background-color: var(--gray-100);
+    color: var(--text-primary);
+}
+
+.theme-dark .context-menu {
+    background-color: var(--gray-100);
+    border-color: var(--gray-200);
+}
+
+.theme-dark .modal {
+    background-color: var(--gray-50);
+}
+
+.theme-dark .emoji-picker {
+    background-color: var(--gray-100);
+    border-color: var(--gray-200);
+}
+
+.theme-dark .notification {
+    background-color: var(--gray-100);
+}
+
+/* High contrast theme adjustments */
+.theme-high-contrast .btn,
+.theme-high-contrast .btn-icon,
+.theme-high-contrast input,
+.theme-high-contrast .message-bubble {
+    border: 2px solid var(--border-dark);
+}
+
+.theme-high-contrast .focus-ring:focus {
+    box-shadow: 0 0 0 4px var(--primary-color);
+}
+
+/* Theme-specific scrollbar styles */
+.theme-dark ::-webkit-scrollbar-track {
+    background: var(--gray-100);
+}
+
+.theme-dark ::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+}
+
+.theme-dark ::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+/* Theme-specific selection colors */
+.theme-light ::selection {
+    background: rgba(102, 126, 234, 0.2);
+    color: var(--text-primary);
+}
+
+.theme-dark ::selection {
+    background: rgba(99, 102, 241, 0.3);
+    color: var(--text-primary);
+}
+
+.theme-high-contrast ::selection {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+.theme-sepia ::selection {
+    background: rgba(139, 69, 19, 0.2);
+    color: var(--text-primary);
+}
+
+.theme-ocean ::selection {
+    background: rgba(14, 165, 233, 0.2);
+    color: var(--text-primary);
+}
+
+.theme-forest ::selection {
+    background: rgba(22, 163, 74, 0.2);
+    color: var(--text-primary);
+}
+
+.theme-sunset ::selection {
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--text-primary);
+}
+
+.theme-purple ::selection {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--text-primary);
+}
+
+/* Theme-specific placeholder colors */
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder,
+.theme-dark [contenteditable]:empty::before {
+    color: var(--gray-400);
+}
+
+/* Theme Toggle Button Styles */
+.theme-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: none;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--animation-duration-fast) var(--animation-easing);
+}
+
+.theme-toggle:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-medium);
+}
+
+.theme-toggle-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform var(--animation-duration-fast) var(--animation-easing);
+}
+
+.theme-toggle.active .theme-toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Theme-specific status indicators */
+.theme-dark .status-indicator.online {
+    box-shadow: 0 0 0 2px var(--gray-100);
+}
+
+.theme-dark .status-indicator.away {
+    box-shadow: 0 0 0 2px var(--gray-100);
+}
+
+.theme-dark .status-indicator.busy {
+    box-shadow: 0 0 0 2px var(--gray-100);
+}
+
+/* Theme-specific loading states */
+.theme-dark .loading-pulse {
+    background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-300) 50%, var(--gray-200) 75%);
+}
+
+.theme-dark .animate-shimmer {
+    background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-300) 50%, var(--gray-200) 75%);
+}
+
+/* Theme-specific form states */
+.theme-dark .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.theme-sepia .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+}
+
+.theme-ocean .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
+.theme-forest .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+.theme-sunset .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.theme-purple .form-group input:focus {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+}
+
+/* Theme-specific hover effects */
+.theme-dark .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.theme-sepia .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(139, 69, 19, 0.4);
+}
+
+.theme-ocean .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+}
+
+.theme-forest .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(22, 163, 74, 0.4);
+}
+
+.theme-sunset .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+}
+
+.theme-purple .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+/* Auto theme (system preference) */
+@media (prefers-color-scheme: dark) {
+    .theme-auto {
+        /* Apply dark theme variables */
+        --primary-color: #6366f1;
+        --primary-dark: #4f46e5;
+        --primary-light: #8b5cf6;
+        --secondary-color: #7c3aed;
+        --accent-color: #ec4899;
+
+        --white: #ffffff;
+        --gray-50: #18181b;
+        --gray-100: #27272a;
+        --gray-200: #3f3f46;
+        --gray-300: #52525b;
+        --gray-400: #71717a;
+        --gray-500: #a1a1aa;
+        --gray-600: #d4d4d8;
+        --gray-700: #e4e4e7;
+        --gray-800: #f4f4f5;
+        --gray-900: #fafafa;
+
+        --success-color: #22c55e;
+        --warning-color: #eab308;
+        --error-color: #f87171;
+        --info-color: #60a5fa;
+
+        --bg-primary: #0f0f0f;
+        --bg-secondary: var(--gray-50);
+        --bg-tertiary: var(--gray-100);
+        --bg-accent: var(--primary-color);
+        --bg-overlay: rgba(0, 0, 0, 0.8);
+
+        --text-primary: var(--gray-900);
+        --text-secondary: var(--gray-600);
+        --text-tertiary: var(--gray-400);
+        --text-inverse: var(--gray-50);
+        --text-muted: var(--gray-500);
+
+        --border-light: var(--gray-200);
+        --border-medium: var(--gray-300);
+        --border-dark: var(--gray-400);
+
+        --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        --bubble-other: var(--gray-100);
+        --bubble-system: var(--gray-200);
+
+        --chat-bg: var(--bg-primary);
+        --message-hover: rgba(255, 255, 255, 0.05);
+        --sidebar-bg: var(--gray-50);
+        --header-bg: var(--gray-50);
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    .theme-auto {
+        /* Apply light theme variables (default) */
+        --primary-color: #667eea;
+        --primary-dark: #5a67d8;
+        --primary-light: #a3bffa;
+        --secondary-color: #764ba2;
+        --accent-color: #f093fb;
+
+        --white: #ffffff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --error-color: #ef4444;
+        --info-color: #3b82f6;
+
+        --bg-primary: var(--white);
+        --bg-secondary: var(--gray-50);
+        --bg-tertiary: var(--gray-100);
+        --bg-accent: var(--primary-color);
+        --bg-overlay: rgba(0, 0, 0, 0.5);
+
+        --text-primary: var(--gray-900);
+        --text-secondary: var(--gray-600);
+        --text-tertiary: var(--gray-400);
+        --text-inverse: var(--white);
+        --text-muted: var(--gray-500);
+
+        --border-light: var(--gray-200);
+        --border-medium: var(--gray-300);
+        --border-dark: var(--gray-400);
+
+        --bubble-own: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        --bubble-other: var(--white);
+        --bubble-system: var(--gray-200);
+
+        --chat-bg: var(--gray-50);
+        --message-hover: rgba(0, 0, 0, 0.05);
+        --sidebar-bg: var(--gray-50);
+        --header-bg: var(--white);
+    }
+}
+
+/* Accessibility improvements for themes */
+@media (prefers-reduced-motion: reduce) {
+    .theme-toggle,
+    .theme-toggle-icon {
+        transition: none;
+    }
+}
+
+/* Print styles for all themes */
+@media print {
+    [class*="theme-"] {
+        --bg-primary: white;
+        --bg-secondary: white;
+        --bg-tertiary: white;
+        --text-primary: black;
+        --text-secondary: #333;
+        --text-tertiary: #666;
+        --border-light: #ccc;
+        --border-medium: #999;
+        --border-dark: #666;
+    }
+
+    [class*="theme-"] .sidebar,
+    [class*="theme-"] .chat-header {
+        background: white !important;
+        color: black !important;
+    }
+
+    [class*="theme-"] .message-bubble {
+        background: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+    }
+}

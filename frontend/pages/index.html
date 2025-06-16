@@ -1,10 +1,540 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Elite Chat - 企業級即時聊天應用程式">
+    <meta name="keywords" content="chat, messaging, realtime, enterprise">
+    <meta name="author" content="Elite Chat Team">
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Elite Chat">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <title>Elite Chat - 企業級聊天應用</title>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/animations.css">
+    <link rel="stylesheet" href="/assets/css/themes.css">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="theme-light">
+<!-- Loading Screen -->
+<div id="loading-screen" class="loading-screen">
+    <div class="loading-container">
+        <div class="loading-logo">
+            <i class="fas fa-comments"></i>
+        </div>
+        <div class="loading-text">Elite Chat</div>
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Main App Container -->
+<div id="app" class="app-container hidden">
+    <!-- Authentication Pages -->
+    <div id="auth-pages" class="auth-pages">
+        <!-- Login Page -->
+        <div id="login-page" class="auth-page active">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <div class="logo">
+                        <i class="fas fa-comments"></i>
+                        <span>Elite Chat</span>
+                    </div>
+                    <h1>歡迎回來</h1>
+                    <p>登錄您的帳戶以開始聊天</p>
+                </div>
+
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-identifier">
+                            <i class="fas fa-user"></i>
+                            用戶名或郵箱
+                        </label>
+                        <input type="text" id="login-identifier" name="identifier" required
+                               placeholder="輸入用戶名或郵箱" autocomplete="username">
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">
+                            <i class="fas fa-lock"></i>
+                            密碼
+                        </label>
+                        <div class="password-input">
+                            <input type="password" id="login-password" name="password" required
+                                   placeholder="輸入密碼" autocomplete="current-password">
+                            <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <!-- Two Factor Authentication Field (Hidden by default) -->
+                    <div id="two-factor-group" class="form-group hidden">
+                        <label for="two-factor-token">
+                            <i class="fas fa-shield-alt"></i>
+                            雙因素認證碼
+                        </label>
+                        <input type="text" id="two-factor-token" name="twoFactorToken"
+                               placeholder="輸入6位數驗證碼" maxlength="6" pattern="[0-9]{6}">
+                        <div class="form-help">請輸入您的驗證應用程式中的6位數代碼</div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="remember-me" name="rememberMe">
+                            <span class="checkmark"></span>
+                            記住我
+                        </label>
+                        <a href="#" id="forgot-password-link" class="link">忘記密碼？</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-loading" id="login-btn">
+                        <span class="btn-text">登錄</span>
+                        <span class="btn-spinner hidden">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                    </button>
+
+                    <div class="auth-switch">
+                        <span>還沒有帳戶？</span>
+                        <a href="#" id="show-register" class="link">立即註冊</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="register-page" class="auth-page">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <div class="logo">
+                        <i class="fas fa-comments"></i>
+                        <span>Elite Chat</span>
+                    </div>
+                    <h1>創建帳戶</h1>
+                    <p>加入我們開始精彩的聊天體驗</p>
+                </div>
+
+                <form id="register-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="register-username">
+                            <i class="fas fa-user"></i>
+                            用戶名
+                        </label>
+                        <input type="text" id="register-username" name="username" required
+                               placeholder="輸入用戶名" autocomplete="username"
+                               pattern="[a-zA-Z0-9_-]{3,30}">
+                        <div class="form-help">3-30個字符，只能包含字母、數字、下劃線和連字符</div>
+                        <div class="form-error"></div>
+                        <div class="form-success"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-email">
+                            <i class="fas fa-envelope"></i>
+                            郵箱
+                        </label>
+                        <input type="email" id="register-email" name="email" required
+                               placeholder="輸入郵箱地址" autocomplete="email">
+                        <div class="form-error"></div>
+                        <div class="form-success"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-password">
+                            <i class="fas fa-lock"></i>
+                            密碼
+                        </label>
+                        <div class="password-input">
+                            <input type="password" id="register-password" name="password" required
+                                   placeholder="輸入密碼" autocomplete="new-password">
+                            <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar">
+                                <div class="strength-fill"></div>
+                            </div>
+                            <div class="strength-text">密碼強度</div>
+                        </div>
+                        <div class="password-requirements">
+                            <div class="requirement" data-requirement="length">
+                                <i class="fas fa-times"></i>
+                                <span>至少8個字符</span>
+                            </div>
+                            <div class="requirement" data-requirement="lowercase">
+                                <i class="fas fa-times"></i>
+                                <span>包含小寫字母</span>
+                            </div>
+                            <div class="requirement" data-requirement="uppercase">
+                                <i class="fas fa-times"></i>
+                                <span>包含大寫字母</span>
+                            </div>
+                            <div class="requirement" data-requirement="number">
+                                <i class="fas fa-times"></i>
+                                <span>包含數字</span>
+                            </div>
+                            <div class="requirement" data-requirement="special">
+                                <i class="fas fa-times"></i>
+                                <span>包含特殊字符</span>
+                            </div>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register-confirm-password">
+                            <i class="fas fa-lock"></i>
+                            確認密碼
+                        </label>
+                        <div class="password-input">
+                            <input type="password" id="register-confirm-password" name="confirmPassword" required
+                                   placeholder="再次輸入密碼" autocomplete="new-password">
+                            <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="agree-terms" name="agreeTerms" required>
+                            <span class="checkmark"></span>
+                            我同意 <a href="#" class="link">服務條款</a> 和 <a href="#" class="link">隱私政策</a>
+                        </label>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-loading" id="register-btn">
+                        <span class="btn-text">創建帳戶</span>
+                        <span class="btn-spinner hidden">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                    </button>
+
+                    <div class="auth-switch">
+                        <span>已有帳戶？</span>
+                        <a href="#" id="show-login" class="link">立即登錄</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Forgot Password Page -->
+        <div id="forgot-password-page" class="auth-page">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <div class="logo">
+                        <i class="fas fa-comments"></i>
+                        <span>Elite Chat</span>
+                    </div>
+                    <h1>重置密碼</h1>
+                    <p>輸入您的郵箱地址，我們將發送重置鏈接</p>
+                </div>
+
+                <form id="forgot-password-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="forgot-email">
+                            <i class="fas fa-envelope"></i>
+                            郵箱地址
+                        </label>
+                        <input type="email" id="forgot-email" name="email" required
+                               placeholder="輸入您的郵箱地址" autocomplete="email">
+                        <div class="form-error"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-loading" id="forgot-btn">
+                        <span class="btn-text">發送重置鏈接</span>
+                        <span class="btn-spinner hidden">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                    </button>
+
+                    <div class="auth-switch">
+                        <a href="#" id="back-to-login" class="link">
+                            <i class="fas fa-arrow-left"></i>
+                            返回登錄
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Chat Application -->
+    <div id="chat-app" class="chat-app hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- User Profile Section -->
+            <div class="user-profile">
+                <div class="user-avatar-container">
+                    <img id="user-avatar" src="" alt="用戶頭像" class="user-avatar">
+                    <div class="status-indicator online"></div>
+                </div>
+                <div class="user-info">
+                    <h3 id="user-name" class="user-name"></h3>
+                    <div class="user-status">
+                        <select id="user-status-select" class="status-select">
+                            <option value="online">在線</option>
+                            <option value="away">離開</option>
+                            <option value="busy">忙碌</option>
+                            <option value="invisible">隱身</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="user-actions">
+                    <button class="btn-icon" id="settings-btn" title="設置">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="btn-icon" id="logout-btn" title="登出">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="sidebar-nav">
+                <button class="nav-tab active" data-tab="chats">
+                    <i class="fas fa-comments"></i>
+                    <span>聊天</span>
+                    <div class="unread-badge hidden" id="chats-badge">0</div>
+                </button>
+                <button class="nav-tab" data-tab="contacts">
+                    <i class="fas fa-users"></i>
+                    <span>聯繫人</span>
+                    <div class="unread-badge hidden" id="contacts-badge">0</div>
+                </button>
+                <button class="nav-tab" data-tab="rooms">
+                    <i class="fas fa-hashtag"></i>
+                    <span>房間</span>
+                    <div class="unread-badge hidden" id="rooms-badge">0</div>
+                </button>
+            </nav>
+
+            <!-- Tab Contents -->
+            <div class="tab-content">
+                <!-- Chats Tab -->
+                <div id="chats-tab" class="tab-pane active">
+                    <div class="tab-header">
+                        <h3>最近聊天</h3>
+                        <button class="btn-icon" id="new-chat-btn" title="新建聊天">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="chat-search" placeholder="搜索聊天...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div id="chat-list" class="chat-list">
+                        <!-- Chat items will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Contacts Tab -->
+                <div id="contacts-tab" class="tab-pane">
+                    <div class="tab-header">
+                        <h3>聯繫人</h3>
+                        <button class="btn-icon" id="add-contact-btn" title="添加聯繫人">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="contact-search" placeholder="搜索聯繫人...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div id="contact-list" class="contact-list">
+                        <!-- Contact items will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Rooms Tab -->
+                <div id="rooms-tab" class="tab-pane">
+                    <div class="tab-header">
+                        <h3>聊天室</h3>
+                        <button class="btn-icon" id="create-room-btn" title="創建房間">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="room-search" placeholder="搜索房間...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div id="room-list" class="room-list">
+                        <!-- Room items will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="welcome-screen">
+                <div class="welcome-content">
+                    <div class="welcome-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h2>歡迎使用 Elite Chat</h2>
+                    <p>選擇一個聊天或聯繫人開始對話</p>
+                    <div class="welcome-actions">
+                        <button class="btn btn-primary" id="start-new-chat">
+                            <i class="fas fa-plus"></i>
+                            開始新聊天
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div id="chat-interface" class="chat-interface hidden">
+                <!-- Chat Header -->
+                <header class="chat-header">
+                    <div class="chat-info">
+                        <div class="chat-avatar-container">
+                            <img id="chat-avatar" src="" alt="聊天頭像" class="chat-avatar">
+                            <div class="status-indicator" id="chat-status"></div>
+                        </div>
+                        <div class="chat-details">
+                            <h3 id="chat-name" class="chat-name"></h3>
+                            <div id="chat-status-text" class="chat-status-text"></div>
+                            <div id="typing-indicator" class="typing-indicator hidden">
+                                    <span class="typing-dots">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </span>
+                                <span class="typing-text">正在輸入...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="btn-icon" id="voice-call-btn" title="語音通話">
+                            <i class="fas fa-phone"></i>
+                        </button>
+                        <button class="btn-icon" id="video-call-btn" title="視頻通話">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button class="btn-icon" id="chat-info-btn" title="聊天信息">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button class="btn-icon" id="chat-menu-btn" title="更多選項">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Messages Container -->
+                <div id="messages-container" class="messages-container">
+                    <!-- Messages will be populated here -->
+                </div>
+
+                <!-- Message Input Area -->
+                <div class="message-input-area">
+                    <!-- Reply Preview -->
+                    <div id="reply-preview" class="reply-preview hidden">
+                        <div class="reply-content">
+                            <div class="reply-header">
+                                <i class="fas fa-reply"></i>
+                                <span>回覆給 <strong id="reply-to-name"></strong></span>
+                            </div>
+                            <div class="reply-message" id="reply-to-message"></div>
+                        </div>
+                        <button class="btn-icon reply-cancel" id="cancel-reply">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <!-- File Upload Preview -->
+                    <div id="upload-preview" class="upload-preview hidden">
+                        <div class="upload-items" id="upload-items">
+                            <!-- Upload items will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Input Container -->
+                    <div class="input-container">
+                        <button class="btn-icon" id="attach-btn" title="附加文件">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <div class="input-wrapper">
+                            <div id="message-input" class="message-input" contenteditable="true"
+                                 data-placeholder="輸入訊息..." role="textbox" aria-label="訊息輸入框"></div>
+                            <button class="btn-icon" id="emoji-btn" title="表情符號">
+                                <i class="fas fa-smile"></i>
+                            </button>
+                        </div>
+                        <button class="btn-icon send-btn" id="send-btn" title="發送" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                        <button class="btn-icon voice-btn hidden" id="voice-btn" title="語音訊息">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modals and Overlays -->
+<div id="modals-container"></div>
+
+<!-- Notifications Container -->
+<div id="notifications-container" class="notifications-container"></div>
+
+<!-- Context Menus -->
+<div id="context-menus" class="context-menus"></div>
+
+<!-- File Input (Hidden) -->
+<input type="file" id="file-input" multiple style="display: none;"
+       accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
+
+<!-- JavaScript Files -->
+<script src="/assets/js/utils/constants.js"></script>
+<script src="/assets/js/utils/helpers.js"></script>
+<script src="/assets/js/utils/validators.js"></script>
+<script src="/assets/js/services/storage.js"></script>
+<script src="/assets/js/services/api.js"></script>
+<script src="/assets/js/services/auth.js"></script>
+<script src="/assets/js/services/websocket.js"></script>
+<script src="/assets/js/components/Notification.js"></script>
+<script src="/assets/js/components/FileUpload.js"></script>
+<script src="/assets/js/components/EmojiPicker.js"></script>
+<script src="/assets/js/components/Chat.js"></script>
+<script src="/assets/js/components/UserList.js"></script>
+<script src="/assets/js/components/RoomList.js"></script>
+<script src="/assets/js/components/MessageInput.js"></script>
+<script src="/assets/js/components/VideoCall.js"></script>
+<script src="/assets/js/components/VoiceRecorder.js"></script>
+<script src="/assets/js/app.js"></script>
+<script src="/assets/js/main.js"></script>
 </body>
 </html>
