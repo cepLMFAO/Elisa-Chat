@@ -1,645 +1,17 @@
-// Voice recording methods
-toggleVoiceRecording() {
-if (this.isRecording) {
-this.stopRecording();
-} else {
-this.startRecording();
-}
-}
-
-startRecording() {
-this.isRecording = true;
-this.recordingDuration = 0;
-
-document.getElementById('voice-recording').classList.remove('hidden');
-
-// Start timer
-this.recordingInterval = setInterval(() => {
-this.recordingDuration++;
-document.getElementById('recording-duration').textContent =
-this.formatDuration(this.recordingDuration);
-}, 1000);
-
-// Simulate recording
-console.log('Recording started...');
-}
-
-stopRecording() {
-this.isRecording = false;
-clearInterval(this.recordingInterval);
-document.getElementById('voice-recording').classList.add('hidden');
-}
-
-cancelRecording() {
-this.stopRecording();
-this.showNotification('錄音已取消', 'info');
-}
-
-sendRecording() {
-const duration = this.formatDuration(this.recordingDuration);
-this.stopRecording();
-
-const message = {
-id: Date.now().toString(),
-content: 'voice_message.mp3',
-type: 'audio',
-duration: duration,
-isOwn: true,
-time: this.formatTime(new Date()),
-status: 'sent',
-sender: {
-id: this.currentUser.id,
-name: this.currentUser.username,
-avatar: this.currentUser.avatar
-}
-};
-
-this.addMessageToChat(message);
-this.showNotification('語音訊息已發送', 'success');
-}
-
-// File handling
-handleFileSelect(e) {
-const files = Array.from(e.target.files);
-if (files.length === 0) return;
-
-files.forEach(file => {
-this.sendFileMessage(file);
-});
-
-// Clear input
-e.target.value = '';
-}
-
-sendFileMessage(file) {
-const message = {
-id: Date.now().toString(),
-content: URL.createObjectURL(file),
-fileName: file.name,
-fileSize: this.formatFileSize(file.size),
-type: file.type.startsWith('image/') ? 'image' : 'file',
-isOwn: true,
-time: this.formatTime(new Date()),
-status: 'sent',
-sender: {
-id: this.currentUser.id,
-name: this.currentUser.username,
-avatar: this.currentUser.avatar
-}
-};
-
-this.addMessageToChat(message);
-this.showNotification(`${file.type.startsWith('image/') ? '圖片' : '文件'}已發送`, 'success');
-}
-
-// Emoji picker
-initEmojiPicker() {
-const emojiGrid = document.getElementById('emoji-grid');
-this.renderEmojiCategory('smileys');
-}
-
-bindEmojiEvents() {
-// Category buttons
-document.querySelectorAll('.emoji-category-btn').forEach(btn => {
-btn.addEventListener('click', () => {
-document.querySelectorAll('.emoji-category-btn').forEach(b => b.classList.remove('active'));
-btn.classList.add('active');
-this.renderEmojiCategory(btn.dataset.category);
-});
-});
-
-// Emoji selection
-document.getElementById('emoji-grid').addEventListener('click', (e) => {
-if (e.target.classList.contains('emoji-item')) {
-this.insertEmoji(e.target.textContent);
-}
-});
-}
-
-renderEmojiCategory(category) {
-const emojiGrid = document.getElementById('emoji-grid');
-const emojis = this.emojiCategories[category] || [];
-
-emojiGrid.innerHTML = emojis.map(emoji =>
-`<button class="emoji-item">${emoji}</button>`
-).join('');
-}
-
-toggleEmojiPicker() {
-const emojiPicker = document.getElementById('emoji-picker');
-emojiPicker.classList.toggle('show');
-}
-
-insertEmoji(emoji) {
-const messageInput = document.getElementById('message-input');
-const selection = window.getSelection();
-const range = selection.getRangeAt(0);
-
-range.deleteContents();
-range.insertNode(document.createTextNode(emoji));
-range.collapse(false);
-
-messageInput.focus();
-this.updateSendButton();
-}
-
-// Context menu
-bindContextMenu() {
-document.getElementById('reply-message')?.addEventListener('click', () => {
-this.replyToMessage(this.contextMenuMessage);
-this.hideContextMenu();
-});
-
-document.getElementById('forward-message')?.addEventListener('click', () => {
-this.forwardMessage(this.contextMenuMessage);
-this.hideContextMenu();
-});
-
-document.getElementById('copy-message')?.addEventListener('click', () => {
-this.copyMessage(this.contextMenuMessage);
-this.hideContextMenu();
-});
-
-document.getElementById('star-message')?.addEventListener('click', () => {
-this.starMessage(this.contextMenuMessage);
-this.hideContextMenu();
-});
-
-document.getElementById('edit-message')?.addEventListener('click', () => {
-this.editMessage(this.contextMenuMessage);
-this.hideContextMenu();
-});
-
-document.getElementById('delete-message')?.addEventListener('click', () => {
-this.deleteMessage(this.contextMenuMessage);
-this.hideContextMenu();
-});
-}
-
-showMessageContextMenu(e, message) {
-this.contextMenuMessage = message;
-const contextMenu = document.getElementById('context-menu');
-
-contextMenu.style.left = e.pageX + 'px';
-contextMenu.style.top = e.pageY + 'px';
-contextMenu.classList.add('show');
-
-// Hide edit option for non-own messages
-const editBtn = document.getElementById('edit-message');
-editBtn.style.display = message.isOwn ? 'flex' : 'none';
-}
-
-hideContextMenu() {
-document.getElementById('context-menu').classList.remove('show');
-}
-
-replyToMessage(message) {
-this.replyingToMessage = message;
-const replyPreview = document.getElementById('reply-preview');
-
-document.getElementById('reply-to-user').textContent = message.sender.name;
-document.getElementById('reply-message').textContent = message.content.substring(0, 50) +
-(message.content.length > 50 ? '...' : '');
-
-replyPreview.classList.remove('hidden');
-document.getElementById('message-input').focus();
-}
-
-cancelReply() {
-document.getElementById('reply-preview').classList.add('hidden');
-this.replyingToMessage = null;
-}
-
-forwardMessage(message) {
-this.showNotification('轉發功能開發中...', 'info');
-}
-
-copyMessage(message) {
-navigator.clipboard.writeText(message.content).then(() => {
-this.showNotification('訊息已複製', 'success');
-}).catch(() => {
-this.showNotification('複製失敗', 'error');
-});
-}
-
-starMessage(message) {
-this.showNotification('訊息已收藏', 'success');
-}
-
-editMessage(message) {
-this.showNotification('編輯功能開發中...', 'info');
-}
-
-deleteMessage(message) {
-if (confirm('確定要刪除這條訊息嗎？')) {
-const messageElement = document.querySelector(`[data-message-id="${message.id}"]`);
-if (messageElement) {
-messageElement.remove();
-this.showNotification('訊息已刪除', 'success');
-}
-}
-}
-
-// Status and presence
-handleStatusChange(e) {
-const status = e.target.value;
-this.updateStatusIndicator('user-status-indicator', status);
-this.showNotification(`狀態已更改為${this.getStatusText(status)}`, 'success');
-}
-
-updateStatusIndicator(elementId, status) {
-const indicator = document.getElementById(elementId);
-if (indicator) {
-indicator.className = `status-indicator ${status}`;
-}
-}
-
-getStatusText(status) {
-const statusMap = {
-online: '在線',
-away: '離開',
-busy: '忙碌',
-invisible: '隱身'
-};
-return statusMap[status] || '離線';
-}
-
-sendTypingIndicator(isTyping) {
-// Simulate typing indicator
-clearTimeout(this.typingTimeout);
-
-if (isTyping) {
-this.typingTimeout = setTimeout(() => {
-this.sendTypingIndicator(false);
-}, 3000);
-}
-}
-
-// Calls
-startVoiceCall() {
-if (!this.currentChat) return;
-this.showCallNotification(this.currentChat, 'voice');
-this.showNotification(`正在呼叫 ${this.currentChat.name}...`, 'info');
-}
-
-startVideoCall() {
-if (!this.currentChat) return;
-this.showCallNotification(this.currentChat, 'video');
-this.showNotification(`正在發起視頻通話...`, 'info');
-}
-
-showCallNotification(contact, type) {
-const callNotification = document.getElementById('call-notification');
-
-document.getElementById('caller-avatar').src = contact.avatar;
-document.getElementById('caller-name').textContent = contact.name;
-document.getElementById('call-type').textContent = type === 'voice' ? '語音通話' : '視頻通話';
-
-callNotification.classList.add('show');
-
-// Auto hide after 30 seconds
-setTimeout(() => {
-callNotification.classList.remove('show');
-}, 30000);
-
-// Bind call actions
-document.getElementById('accept-call').onclick = () => {
-callNotification.classList.remove('show');
-this.showNotification('通話已接聽', 'success');
-};
-
-document.getElementById('decline-call').onclick = () => {
-callNotification.classList.remove('show');
-this.showNotification('通話已拒絕', 'info');
-};
-}
-
-// Search
-handleSearch(e) {
-const query = e.target.value.toLowerCase();
-const searchType = e.target.id.includes('chat') ? 'chat' :
-e.target.id.includes('contact') ? 'contact' : 'room';
-
-const items = document.querySelectorAll(`.${searchType}-item`);
-
-items.forEach(item => {
-const name = item.querySelector(`.${searchType}-name`).textContent.toLowerCase();
-const shouldShow = name.includes(query);
-item.style.display = shouldShow ? 'flex' : 'none';
-});
-}
-
-// Mobile sidebar
-toggleMobileSidebar() {
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebar-overlay');
-
-sidebar.classList.toggle('open');
-overlay.classList.toggle('show');
-}
-
-closeMobileSidebar() {
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('sidebar-overlay');
-
-sidebar.classList.remove('open');
-overlay.classList.remove('show');
-}
-
-// Global event handlers
-handleGlobalClick(e) {
-// Close emoji picker if clicking outside
-const emojiPicker = document.getElementById('emoji-picker');
-const emojiBtn = document.getElementById('emoji-btn');
-
-if (!emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
-emojiPicker.classList.remove('show');
-}
-
-// Close context menu if clicking outside
-const contextMenu = document.getElementById('context-menu');
-if (!contextMenu.contains(e.target)) {
-this.hideContextMenu();
-}
-}
-
-handleGlobalKeydown(e) {
-if (e.key === 'Escape') {
-// Close modals/pickers
-document.getElementById('emoji-picker').classList.remove('show');
-this.hideContextMenu();
-this.cancelReply();
-}
-}
-
-// Logout
-handleLogout() {
-if (confirm('確定要登出嗎？')) {
-localStorage.removeItem('isAuthenticated');
-localStorage.removeItem('currentUser');
-window.location.href = 'login.html';
-}
-}
-
-// Utility methods
-formatTime(date) {
-return date.toLocaleTimeString('zh-TW', {
-hour: '2-digit',
-minute: '2-digit',
-hour12: false
-});
-}
-
-formatDuration(seconds) {
-const mins = Math.floor(seconds / 60);
-const secs = seconds % 60;
-return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-formatFileSize(bytes) {
-if (bytes === 0) return '0 Bytes';
-const k = 1024;
-const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-const i = Math.floor(Math.log(bytes) / Math.log(k));
-return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-showNotification(message, type = 'info', duration = 3000) {
-const notification = document.createElement('div');
-notification.className = `notification ${type}`;
-notification.innerHTML = `
-<div class="notification-header">
-    <span class="notification-title">${type === 'success' ? '成功' : type === 'error' ? '錯誤' : '提示'}</span>
-    <button class="notification-close">
-        <i class="fas fa-times"></i>
-    </button>
-</div>
-<div class="notification-content">${message}</div>
-`;
-
-const container = document.getElementById('notifications-container');
-container.appendChild(notification);
-
-// Animate in
-notification.classList.add('animate-notification-in');
-
-// Close button
-notification.querySelector('.notification-close').onclick = () => {
-notification.remove();
-};
-
-// Auto remove
-setTimeout(() => {
-if (notification.parentNode) {
-notification.classList.add('animate-notification-out');
-setTimeout(() => notification.remove(), 300);
-}
-}, duration);
-}
-
-// Demo data methods
-getDemoChatData(chatId) {
-const chats = {
-'1': {
-id: '1',
-name: 'Alice Johnson',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
-status: 'online',
-type: 'direct'
-},
-'2': {
-id: '2',
-name: 'Bob Smith',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob',
-status: 'away',
-type: 'direct'
-},
-'3': {
-id: '3',
-name: 'Carol White',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=carol',
-status: 'busy',
-type: 'direct'
-}
-};
-return chats[chatId];
-}
-
-getDemoContactData(contactId) {
-const contacts = {
-'1': {
-id: '1',
-name: 'Charlie Brown',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=charlie',
-status: 'online'
-},
-'2': {
-id: '2',
-name: 'Diana Wilson',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=diana',
-status: 'busy'
-},
-'3': {
-id: '3',
-name: 'Eve Davis',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=eve',
-status: 'away'
-}
-};
-return contacts[contactId];
-}
-
-getDemoRoomData(roomId) {
-const rooms = {
-'1': {
-id: '1',
-name: '開發討論',
-avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=dev',
-description: '15 成員 · 3 在線',
-type: 'room'
-},
-'2': {
-id: '2',
-name: '設計團隊',
-avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=design',
-description: '8 成員 · 2 在線',
-type: 'room'
-},
-'3': {
-id: '3',
-name: '項目管理',
-avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=project',
-description: '25 成員 · 8 在線',
-type: 'room'
-}
-};
-return rooms[roomId];
-}
-
-getDemoMessages(chatId) {
-const messages = {
-'1': [
-{
-id: '1',
-content: '你好！最近怎麼樣？',
-type: 'text',
-isOwn: false,
-time: '09:30',
-sender: {
-id: '1',
-name: 'Alice Johnson',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice'
-}
-},
-{
-id: '2',
-content: '很好啊！工作很忙，但還算順利 😊',
-type: 'text',
-isOwn: true,
-time: '09:31',
-status: 'read',
-sender: {
-id: this.currentUser?.id,
-name: this.currentUser?.username,
-avatar: this.currentUser?.avatar
-}
-},
-{
-id: '3',
-content: '那就好！有空一起喝咖啡嗎？',
-type: 'text',
-isOwn: false,
-time: '09:32',
-sender: {
-id: '1',
-name: 'Alice Johnson',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice'
-}
-}
-]
-};
-return messages[chatId] || [];
-}
-
-getDemoRoomMessages(roomId) {
-const messages = {
-'1': [
-{
-id: '1',
-content: '大家好！新功能的開發進度如何？',
-type: 'text',
-isOwn: false,
-time: '10:00',
-sender: {
-id: '1',
-name: 'Alice Johnson',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice'
-}
-},
-{
-id: '2',
-content: '前端部分已完成 80%，預計本週末可以完成',
-type: 'text',
-isOwn: true,
-time: '10:01',
-status: 'read',
-sender: {
-id: this.currentUser?.id,
-name: this.currentUser?.username,
-avatar: this.currentUser?.avatar
-}
-},
-{
-id: '3',
-content: '後端 API 也差不多了，今天會部署到測試環境',
-type: 'text',
-isOwn: false,
-time: '10:02',
-sender: {
-id: '2',
-name: 'Bob Smith',
-avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob'
-}
-}
-]
-};
-return messages[roomId] || [];
-}
-
-loadDemoData() {
-// Simulate some unread messages
-setTimeout(() => {
-this.updateUnreadCount('chats', 3);
-this.updateUnreadCount('contacts', 1);
-}, 2000);
-}
-
-updateUnreadCount(tab, count) {
-const badge = document.getElementById(`${tab}-badge`);
-if (badge) {
-if (count > 0) {
-badge.textContent = count;
-badge.classList.remove('hidden');
-} else {
-badge.classList.add('hidden');
-}
-}
-}
-}
-
-// Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-new EliteChatApp();
-});
-</script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Elite Chat - 聊天介面">
     <title>Elite Chat - 企業級聊天應用</title>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/themes.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <link rel="stylesheet" href="../assets/css/chat.css">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -648,1622 +20,9 @@ new EliteChatApp();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        /* CSS Variables */
-        :root {
-            --primary-color: #667eea;
-            --primary-dark: #5a67d8;
-            --secondary-color: #764ba2;
-            --white: #ffffff;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
-            --info-color: #3b82f6;
-            --bg-primary: var(--white);
-            --bg-secondary: var(--gray-50);
-            --bg-tertiary: var(--gray-100);
-            --text-primary: var(--gray-900);
-            --text-secondary: var(--gray-600);
-            --text-tertiary: var(--gray-400);
-            --text-inverse: var(--white);
-            --border-light: var(--gray-200);
-            --border-medium: var(--gray-300);
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --spacing-xs: 0.25rem;
-            --spacing-sm: 0.5rem;
-            --spacing-md: 1rem;
-            --spacing-lg: 1.5rem;
-            --spacing-xl: 2rem;
-            --spacing-2xl: 3rem;
-            --radius-sm: 0.25rem;
-            --radius-md: 0.5rem;
-            --radius-lg: 0.75rem;
-            --radius-xl: 1rem;
-            --radius-full: 9999px;
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --font-size-xs: 0.75rem;
-            --font-size-sm: 0.875rem;
-            --font-size-base: 1rem;
-            --font-size-lg: 1.125rem;
-            --font-size-xl: 1.25rem;
-            --font-size-2xl: 1.5rem;
-            --transition-fast: 150ms ease-in-out;
-            --transition-normal: 250ms ease-in-out;
-            --sidebar-width: 320px;
-            --header-height: 60px;
-        }
-
-        /* Reset */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-family);
-            font-size: var(--font-size-base);
-            line-height: 1.5;
-            color: var(--text-primary);
-            background-color: var(--bg-primary);
-            overflow: hidden;
-        }
-
-        .hidden { display: none !important; }
-
-        /* Layout */
-        .chat-app {
-            display: flex;
-            width: 100%;
-            height: 100vh;
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--bg-secondary);
-            border-right: 1px solid var(--border-light);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .user-profile {
-            padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            background-color: var(--white);
-        }
-
-        .user-avatar-container {
-            position: relative;
-        }
-
-        .user-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-full);
-            object-fit: cover;
-        }
-
-        .status-indicator {
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            width: 16px;
-            height: 16px;
-            border-radius: var(--radius-full);
-            border: 3px solid var(--white);
-        }
-
-        .status-indicator.online { background-color: var(--success-color); }
-        .status-indicator.away { background-color: var(--warning-color); }
-        .status-indicator.busy { background-color: var(--error-color); }
-
-        .user-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .user-name {
-            margin: 0 0 var(--spacing-xs) 0;
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .status-select {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            cursor: pointer;
-            padding: 0;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: var(--spacing-xs);
-        }
-
-        .btn-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-full);
-            border: none;
-            background: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-fast);
-        }
-
-        .btn-icon:hover {
-            background-color: var(--gray-100);
-            color: var(--text-primary);
-        }
-
-        .sidebar-nav {
-            display: flex;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .nav-tab {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-            padding: var(--spacing-md);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            font-weight: 500;
-            transition: var(--transition-fast);
-            position: relative;
-        }
-
-        .nav-tab:hover {
-            background-color: var(--gray-50);
-            color: var(--text-primary);
-        }
-
-        .nav-tab.active {
-            color: var(--primary-color);
-            background-color: var(--gray-50);
-        }
-
-        .nav-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: var(--primary-color);
-        }
-
-        .tab-content {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tab-pane {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .tab-pane.active {
-            display: flex;
-        }
-
-        .tab-header {
-            padding: var(--spacing-lg);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .tab-header h3 {
-            margin: 0;
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .search-container {
-            padding: var(--spacing-md) var(--spacing-lg);
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-            position: relative;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 40px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            font-size: var(--font-size-sm);
-            background-color: var(--bg-secondary);
-        }
-
-        .search-container input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background-color: var(--white);
-        }
-
-        .search-container i {
-            position: absolute;
-            left: calc(var(--spacing-lg) + var(--spacing-md));
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            pointer-events: none;
-        }
-
-        .chat-list, .contact-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-sm) 0;
-        }
-
-        .chat-item, .contact-item {
-            padding: var(--spacing-md) var(--spacing-lg);
-            cursor: pointer;
-            transition: var(--transition-fast);
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-
-        .chat-item:hover, .contact-item:hover {
-            background-color: var(--bg-tertiary);
-        }
-
-        .chat-item.active, .contact-item.active {
-            background-color: var(--primary-color);
-            color: var(--white);
-        }
-
-        .item-avatar-container {
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .item-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-full);
-            object-fit: cover;
-        }
-
-        .item-info {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .item-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--spacing-sm);
-        }
-
-        .chat-name, .contact-name {
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-primary);
-        }
-
-        .chat-time {
-            font-size: var(--font-size-xs);
-            color: var(--text-tertiary);
-            flex-shrink: 0;
-        }
-
-        .chat-message, .contact-status {
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chat-item.active .chat-name,
-        .chat-item.active .chat-message,
-        .chat-item.active .chat-time,
-        .contact-item.active .contact-name,
-        .contact-item.active .contact-status {
-            color: var(--white);
-        }
-
-        .unread-count {
-            background-color: var(--primary-color);
-            color: var(--white);
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: var(--radius-full);
-            min-width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-primary);
-            overflow: hidden;
-        }
-
-        .welcome-screen {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
-        }
-
-        .welcome-content {
-            text-align: center;
-            max-width: 400px;
-            padding: var(--spacing-2xl);
-        }
-
-        .welcome-icon {
-            font-size: 4rem;
-            color: var(--primary-color);
-            margin-bottom: var(--spacing-xl);
-            opacity: 0.8;
-        }
-
-        .welcome-content h2 {
-            margin: 0 0 var(--spacing-md) 0;
-            font-size: var(--font-size-2xl);
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .welcome-content p {
-            margin: 0 0 var(--spacing-xl) 0;
-            color: var(--text-secondary);
-            font-size: var(--font-size-lg);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-md) var(--spacing-lg);
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            text-decoration: none;
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            color: var(--white);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .chat-interface {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .chat-header {
-            height: var(--header-height);
-            padding: 0 var(--spacing-lg);
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-        }
-
-        .chat-info {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            flex: 1;
-            min-width: 0;
-        }
-
-        .chat-avatar-container {
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .chat-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-full);
-            object-fit: cover;
-        }
-
-        .chat-details {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .chat-name {
-            margin: 0 0 2px 0;
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chat-status-text {
-            font-size: var(--font-size-xs);
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chat-actions {
-            display: flex;
-            gap: var(--spacing-xs);
-            flex-shrink: 0;
-        }
-
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-lg);
-            background-color: var(--bg-secondary);
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
-        }
-
-        .message {
-            display: flex;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-sm);
-        }
-
-        .message.own {
-            flex-direction: row-reverse;
-        }
-
-        .message-bubble {
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-radius: var(--radius-lg);
-            max-width: 70%;
-            word-wrap: break-word;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-        }
-
-        .message:not(.own) .message-bubble {
-            background-color: var(--white);
-            color: var(--text-primary);
-            border-bottom-left-radius: var(--radius-sm);
-        }
-
-        .message.own .message-bubble {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            color: var(--white);
-            border-bottom-right-radius: var(--radius-sm);
-        }
-
-        .message-text {
-            margin: 0;
-            line-height: 1.4;
-        }
-
-        .message-time {
-            font-size: var(--font-size-xs);
-            color: var(--text-tertiary);
-            margin-top: var(--spacing-xs);
-        }
-
-        .message.own .message-time {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .message-input-area {
-            background-color: var(--white);
-            border-top: 1px solid var(--border-light);
-            flex-shrink: 0;
-        }
-
-        .input-container {
-            padding: var(--spacing-md) var(--spacing-lg);
-            display: flex;
-            align-items: flex-end;
-            gap: var(--spacing-sm);
-        }
-
-        .input-wrapper {
-            flex: 1;
-            background-color: var(--bg-secondary);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            min-height: 44px;
-            transition: var(--transition-fast);
-        }
-
-        .input-wrapper:focus-within {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .message-input {
-            flex: 1;
-            min-height: 44px;
-            padding: var(--spacing-sm) var(--spacing-md);
-            border: none;
-            background: none;
-            resize: none;
-            outline: none;
-            font-family: inherit;
-            font-size: var(--font-size-base);
-            line-height: 1.5;
-        }
-
-        .message-input:empty::before {
-            content: attr(data-placeholder);
-            color: var(--text-tertiary);
-            pointer-events: none;
-        }
-
-        .notifications-container {
-            position: fixed;
-            top: var(--spacing-lg);
-            right: var(--spacing-lg);
-            z-index: 1070;
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
-            pointer-events: none;
-        }
-
-        .notification {
-            background-color: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xl);
-            padding: var(--spacing-md) var(--spacing-lg);
-            border-left: 4px solid var(--info-color);
-            max-width: 400px;
-            pointer-events: auto;
-            animation: slideInRight 0.3s ease-out;
-        }
-
-        .notification.success { border-left-color: var(--success-color); }
-        .notification.error { border-left-color: var(--error-color); }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: fixed;
-                top: 0;
-                left: -100%;
-                z-index: 1000;
-                transition: left var(--transition-normal);
-                height: 100vh;
-            }
-
-            .sidebar.open {
-                left: 0;
-            }
-
-            .chat-main {
-                width: 100%;
-            }
-
-            .mobile-header {
-                display: flex;
-                height: var(--header-height);
-                background-color: var(--white);
-                border-bottom: 1px solid var(--border-light);
-                padding: 0 var(--spacing-md);
-                align-items: center;
-                justify-content: space-between;
-            }
-
-            .mobile-menu-btn {
-                background: none;
-                border: none;
-                font-size: var(--font-size-lg);
-                color: var(--text-secondary);
-                cursor: pointer;
-                padding: var(--spacing-sm);
-            }
-
-            .logo {
-                display: flex;
-                align-items: center;
-                gap: var(--spacing-sm);
-                font-size: var(--font-size-lg);
-                font-weight: 700;
-                color: var(--primary-color);
-            }
-
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 999;
-                display: none;
-            }
-
-            .sidebar-overlay.show {
-                display: block;
-            }
-        }
-
-        .mobile-header {
-            display: none;
-        }
-        </head>
-        <body>
-        <!-- Mobile Header -->
-        <header class="mobile-header" id="mobile-header">
-        <button class="mobile-menu-btn" id="mobile-menu-btn">
-        <i class="fas fa-bars"></i>
-        </button>
-        <div class="logo">
-        <i class="fas fa-comments"></i>
-        <span>Elite Chat</span>
-        </div>
-        <button class="btn-icon" id="mobile-settings-btn">
-        <i class="fas fa-cog"></i>
-        </button>
-        </header>
-
-        <!-- Main Chat Application -->
-        <div class="chat-app">
-        <!-- Sidebar Overlay (Mobile) -->
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-        <!-- User Profile Section -->
-        <div class="user-profile">
-        <div class="user-avatar-container">
-        <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=demo" alt="用戶頭像" class="user-avatar">
-        <div class="status-indicator online" id="user-status-indicator"></div>
-        </div>
-        <div class="user-info">
-        <h3 id="user-name" class="user-name">演示用戶</h3>
-        <select id="user-status-select" class="status-select">
-        <option value="online">在線</option>
-        <option value="away">離開</option>
-        <option value="busy">忙碌</option>
-        </select>
-        </div>
-        <div class="user-actions">
-        <button class="btn-icon" id="settings-btn" title="設置">
-        <i class="fas fa-cog"></i>
-        </button>
-        <button class="btn-icon" id="theme-toggle-btn" title="切換主題">
-        <i class="fas fa-moon"></i>
-        </button>
-        <button class="btn-icon" id="logout-btn" title="登出">
-        <i class="fas fa-sign-out-alt"></i>
-        </button>
-        </div>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <nav class="sidebar-nav">
-        <button class="nav-tab active" data-tab="chats">
-        <i class="fas fa-comments"></i>
-        <span>聊天</span>
-        </button>
-        <button class="nav-tab" data-tab="contacts">
-        <i class="fas fa-users"></i>
-        <span>聯繫人</span>
-        </button>
-        </nav>
-
-        <!-- Tab Contents -->
-        <div class="tab-content">
-        <!-- Chats Tab -->
-        <div id="chats-tab" class="tab-pane active">
-        <div class="tab-header">
-        <h3>最近聊天</h3>
-        <button class="btn-icon" id="new-chat-btn" title="新建聊天">
-        <i class="fas fa-plus"></i>
-        </button>
-        </div>
-        <div class="search-container">
-        <input type="text" id="chat-search" placeholder="搜索聊天...">
-        <i class="fas fa-search"></i>
-        </div>
-        <div class="chat-list">
-        <div class="chat-item" data-chat-id="1">
-        <div class="item-avatar-container">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=alice" alt="Alice" class="item-avatar">
-        <div class="status-indicator online"></div>
-        </div>
-        <div class="item-info">
-        <div class="item-header">
-        <div class="chat-name">Alice Johnson</div>
-        <div class="chat-time">10:30</div>
-        </div>
-        <div class="chat-message">你好！最近怎麼樣？</div>
-        </div>
-        <div class="unread-count">2</div>
-        </div>
-        <div class="chat-item" data-chat-id="2">
-        <div class="item-avatar-container">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=bob" alt="Bob" class="item-avatar">
-        <div class="status-indicator away"></div>
-        </div>
-        <div class="item-info">
-        <div class="item-header">
-        <div class="chat-name">Bob Smith</div>
-        <div class="chat-time">昨天</div>
-        </div>
-        <div class="chat-message">明天見面聊</div>
-        </div>
-        </div>
-        <div class="chat-item" data-chat-id="3">
-        <div class="item-avatar-container">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=carol" alt="Carol" class="item-avatar">
-        <div class="status-indicator busy"></div>
-        </div>
-        <div class="item-info">
-        <div class="item-header">
-        <div class="chat-name">Carol White</div>
-        <div class="chat-time">2天前</div>
-        </div>
-        <div class="chat-message">好的，謝謝你的幫助！</div>
-        </div>
-        </div>
-        </div>
-        </div>
-
-        <!-- Contacts Tab -->
-        <div id="contacts-tab" class="tab-pane">
-        <div class="tab-header">
-        <h3>聯繫人</h3>
-        <button class="btn-icon" id="add-contact-btn" title="添加聯繫人">
-        <i class="fas fa-user-plus"></i>
-        </button>
-        </div>
-        <div class="search-container">
-        <input type="text" id="contact-search" placeholder="搜索聯繫人...">
-        <i class="fas fa-search"></i>
-        </div>
-        <div class="contact-list">
-        <div class="contact-item" data-contact-id="1">
-        <div class="item-avatar-container">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=charlie" alt="Charlie" class="item-avatar">
-        <div class="status-indicator online"></div>
-        </div>
-        <div class="item-info">
-        <div class="contact-name">Charlie Brown</div>
-        <div class="contact-status">在線</div>
-        </div>
-        </div>
-        <div class="contact-item" data-contact-id="2">
-        <div class="item-avatar-container">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=diana" alt="Diana" class="item-avatar">
-        <div class="status-indicator busy"></div>
-        </div>
-        <div class="item-info">
-        <div class="contact-name">Diana Wilson</div>
-        <div class="contact-status">忙碌</div>
-        </div>
-        </div>
-        <div class="contact-item" data-contact-id="3">
-        <div class="item-avatar-container">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=eve" alt="Eve" class="item-avatar">
-        <div class="status-indicator away"></div>
-        </div>
-        <div class="item-info">
-        <div class="contact-name">Eve Davis</div>
-        <div class="contact-status">離開</div>
-        </div>
-        </div>
-        </div>
-        </div>
-        </div>
-        </aside>
-
-        <!-- Main Chat Area -->
-        <main class="chat-main">
-        <!-- Welcome Screen -->
-        <div id="welcome-screen" class="welcome-screen">
-        <div class="welcome-content">
-        <div class="welcome-icon">
-        <i class="fas fa-comments"></i>
-        </div>
-        <h2>歡迎使用 Elite Chat</h2>
-        <p>選擇一個聊天或聯繫人開始對話</p>
-        <button class="btn btn-primary" id="start-new-chat">
-        <i class="fas fa-plus"></i>
-                                 開始新聊天
-        </button>
-        </div>
-        </div>
-
-        <!-- Chat Interface -->
-        <div id="chat-interface" class="chat-interface hidden">
-        <!-- Chat Header -->
-        <div class="chat-header">
-        <div class="chat-info">
-        <div class="chat-avatar-container">
-        <img id="chat-avatar" src="" alt="聊天頭像" class="chat-avatar">
-        <div class="status-indicator" id="chat-status-indicator"></div>
-        </div>
-        <div class="chat-details">
-        <h3 id="chat-name" class="chat-name">聊天名稱</h3>
-        <div id="chat-status-text" class="chat-status-text">在線</div>
-        </div>
-        </div>
-        <div class="chat-actions">
-        <button class="btn-icon" id="voice-call-btn" title="語音通話">
-        <i class="fas fa-phone"></i>
-        </button>
-        <button class="btn-icon" id="video-call-btn" title="視頻通話">
-        <i class="fas fa-video"></i>
-        </button>
-        <button class="btn-icon" id="chat-info-btn" title="聊天信息">
-        <i class="fas fa-info-circle"></i>
-        </button>
-        </div>
-        </div>
-
-        <!-- Messages Container -->
-        <div id="messages-container" class="messages-container">
-        <!-- Messages will be inserted here -->
-        </div>
-
-        <!-- Message Input Area -->
-        <div class="message-input-area">
-        <div class="input-container">
-        <button class="btn-icon" id="attach-btn" title="附件">
-        <i class="fas fa-paperclip"></i>
-        </button>
-        <div class="input-wrapper">
-        <div id="message-input" class="message-input" contenteditable="true" data-placeholder="輸入消息..."></div>
-        <button class="btn-icon" id="emoji-btn" title="表情符號">
-        <i class="fas fa-smile"></i>
-        </button>
-        </div>
-        <button class="btn btn-primary" id="send-btn" title="發送">
-        <i class="fas fa-paper-plane"></i>
-        </button>
-        </div>
-        </div>
-
-        <!-- File Input -->
-        <input type="file" id="file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display: none;">
-        </div>
-        </main>
-        </div>
-
-        <!-- Notifications Container -->
-        <div id="notifications-container" class="notifications-container"></div>
-
-        <script>
-         class EliteChatApp {
-         constructor() {
-             this.currentUser = null;
-             this.currentChat = null;
-             this.init();
-         }
-
-             async init() {
-             if (!this.checkAuth()) {
-             window.location.href = 'login.html';
-             return;
-         }
-
-             this.loadUserData();
-             this.bindEvents();
-             this.loadDemoData();
-         }
-
-         checkAuth() {
-             return localStorage.getItem('isAuthenticated') === 'true' &&
-         localStorage.getItem('currentUser');
-         }
-
-         loadUserData() {
-             const userData = localStorage.getItem('currentUser');
-             if (userData) {
-             this.currentUser = JSON.parse(userData);
-             this.updateUserProfile();
-         }
-         }
-
-         updateUserProfile() {
-             if (!this.currentUser) return;
-             document.getElementById('user-name').textContent = this.currentUser.username;
-             document.getElementById('user-avatar').src = this.currentUser.avatar;
-         }
-
-         bindEvents() {
-         // Mobile menu
-         document.getElementById('mobile-menu-btn')?.addEventListener('click', this.toggleMobileSidebar.bind(this));
-             document.getElementById('sidebar-overlay')?.addEventListener('click', this.closeMobileSidebar.bind(this));
-
-         // Logout
-         document.getElementById('logout-btn')?.addEventListener('click', this.handleLogout.bind(this));
-
-         // Tab switching
-         document.querySelectorAll('.nav-tab').forEach(tab => {
-             tab.addEventListener('click', (e) => {
-             this.switchTab(e.target.closest('.nav-tab').dataset.tab);
-         });
-         });
-
-         // Chat/Contact selection
-         this.bindItemSelection();
-
-         // Message input
-         const messageInput = document.getElementById('message-input');
-             if (messageInput) {
-             messageInput.addEventListener('input', this.handleMessageInput.bind(this));
-             messageInput.addEventListener('keydown', this.handleMessageKeydown.bind(this));
-         }
-
-         // Buttons
-         document.getElementById('send-btn')?.addEventListener('click', this.sendMessage.bind(this));
-             document.getElementById('attach-btn')?.addEventListener('click', () => {
-             document.getElementById('file-input').click();
-         });
-
-         // File input
-         document.getElementById('file-input')?.addEventListener('change', this.handleFileSelect.bind(this));
-
-         // Chat actions
-         document.getElementById('voice-call-btn')?.addEventListener('click', this.startVoiceCall.bind(this));
-             document.getElementById('video-call-btn')?.addEventListener('click', this.startVideoCall.bind(this));
-
-         // Search
-         document.getElementById('chat-search')?.addEventListener('input', this.handleSearch.bind(this));
-             document.getElementById('contact-search')?.addEventListener('input', this.handleSearch.bind(this));
-         }
-
-         bindItemSelection() {
-             document.querySelectorAll('.chat-item').forEach(item => {
-             item.addEventListener('click', () => {
-             const chatId = item.dataset.chatId;
-             this.selectChat(chatId, item);
-         });
-         });
-
-             document.querySelectorAll('.contact-item').forEach(item => {
-             item.addEventListener('click', () => {
-             const contactId = item.dataset.contactId;
-             this.selectContact(contactId, item);
-         });
-         });
-         }
-
-         selectChat(chatId, element) {
-             this.clearActiveItems();
-             element.classList.add('active');
-
-             const unreadCount = element.querySelector('.unread-count');
-             if (unreadCount) unreadCount.remove();
-
-             const chatData = this.getDemoChatData(chatId);
-             this.loadChat(chatData);
-             this.closeMobileSidebar();
-         }
-
-         selectContact(contactId, element) {
-             this.clearActiveItems();
-             element.classList.add('active');
-
-             const contactData = this.getDemoContactData(contactId);
-             this.startNewChatWithContact(contactData);
-             this.closeMobileSidebar();
-         }
-
-         clearActiveItems() {
-             document.querySelectorAll('.chat-item, .contact-item').forEach(item => {
-             item.classList.remove('active');
-         });
-         }
-
-         loadChat(chatData) {
-             this.currentChat = chatData;
-             this.showChatInterface();
-             this.updateChatHeader(chatData);
-             this.loadChatMessages(chatData.id);
-         }
-
-         startNewChatWithContact(contactData) {
-             const chatData = {
-             id: `contact_${contactData.id}`,
-             name: contactData.name,
-             avatar: contactData.avatar,
-             status: contactData.status,
-             type: 'direct'
-         };
-             this.loadChat(chatData);
-         }
-
-         showChatInterface() {
-             document.getElementById('welcome-screen').classList.add('hidden');
-             document.getElementById('chat-interface').classList.remove('hidden');
-         }
-
-         updateChatHeader(chatData) {
-             document.getElementById('chat-name').textContent = chatData.name;
-             document.getElementById('chat-avatar').src = chatData.avatar;
-             document.getElementById('chat-status-text').textContent = this.getStatusText(chatData.status);
-             this.updateStatusIndicator('chat-status-indicator', chatData.status);
-         }
-
-         loadChatMessages(chatId) {
-             const messages = this.getDemoMessages(chatId);
-             this.displayMessages(messages);
-         }
-
-         displayMessages(messages) {
-             const container = document.getElementById('messages-container');
-             container.innerHTML = '';
-
-             messages.forEach(message => {
-             const messageElement = this.createMessageElement(message);
-             container.appendChild(messageElement);
-         });
-
-             container.scrollTop = container.scrollHeight;
-         }
-
-         createMessageElement(message) {
-             const messageDiv = document.createElement('div');
-             messageDiv.className = `message ${message.isOwn ? 'own' : ''}`;
-
-             const bubbleDiv = document.createElement('div');
-             bubbleDiv.className = 'message-bubble';
-             bubbleDiv.innerHTML = `
-         <p class="message-text">${message.content}</p>
-         <div class="message-time">${message.time}</div>
-         `;
-
-             messageDiv.appendChild(bubbleDiv);
-             return messageDiv;
-         }
-
-         switchTab(tabName) {
-             document.querySelectorAll('.nav-tab').forEach(tab => {
-             tab.classList.remove('active');
-         });
-             document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
-
-             document.querySelectorAll('.tab-pane').forEach(pane => {
-             pane.classList.remove('active');
-         });
-             document.getElementById(`${tabName}-tab`)?.classList.add('active');
-         }
-
-         handleMessageInput() {
-             const messageInput = document.getElementById('message-input');
-             const sendBtn = document.getElementById('send-btn');
-             const hasContent = messageInput.textContent.trim().length > 0;
-             sendBtn.disabled = !hasContent;
-         }
-
-         handleMessageKeydown(e) {
-             if (e.key === 'Enter' && !e.shiftKey) {
-             e.preventDefault();
-             this.sendMessage();
-         }
-         }
-
-         sendMessage() {
-             const messageInput = document.getElementById('message-input');
-             const content = messageInput.textContent.trim();
-
-             if (!content || !this.currentChat) return;
-
-             const message = {
-             id: Date.now().toString(),
-             content,
-             isOwn: true,
-             time: this.formatTime(new Date())
-         };
-
-             this.addMessageToChat(message);
-             messageInput.textContent = '';
-             this.handleMessageInput();
-
-         setTimeout(() => this.simulateResponse(), 1000);
-         }
-
-         addMessageToChat(message) {
-             const container = document.getElementById('messages-container');
-             const messageElement = this.createMessageElement(message);
-             container.appendChild(messageElement);
-             container.scrollTop = container.scrollHeight;
-         }
-
-         simulateResponse() {
-             if (!this.currentChat) return;
-
-             const responses = [
-                    "好的，我知道了！",
-                    "謝謝你的消息 😊",
-                    "聽起來不錯",
-                    "我待會回覆你",
-                    "👍",
-                    "有道理"
-                ];
-
-             const response = {
-             id: Date.now().toString(),
-             content: responses[Math.floor(Math.random() * responses.length)],
-             isOwn: false,
-             time: this.formatTime(new Date())
-         };
-
-             this.addMessageToChat(response);
-         }
-
-         handleFileSelect(e) {
-             const files = Array.from(e.target.files);
-             if (files.length === 0) return;
-
-             files.forEach(file => {
-             this.showNotification(`已選擇文件: ${file.name}`, 'success');
-         });
-
-             e.target.value = '';
-         }
-
-         startVoiceCall() {
-             if (!this.currentChat) return;
-             this.showNotification(`正在呼叫 ${this.currentChat.name}...`, 'info');
-         }
-
-         startVideoCall() {
-             if (!this.currentChat) return;
-             this.showNotification(`正在發起視頻通話...`, 'info');
-         }
-
-         handleSearch(e) {
-             const query = e.target.value.toLowerCase();
-             const searchType = e.target.id.includes('chat') ? 'chat' : 'contact';
-             const items = document.querySelectorAll(`.${searchType}-item`);
-
-             items.forEach(item => {
-             const name = item.querySelector(`.${searchType}-name`).textContent.toLowerCase();
-             const shouldShow = name.includes(query);
-             item.style.display = shouldShow ? 'flex' : 'none';
-         });
-         }
-
-         toggleMobileSidebar() {
-             const sidebar = document.getElementById('sidebar');
-             const overlay = document.getElementById('sidebar-overlay');
-
-             sidebar.classList.toggle('open');
-             overlay.classList.toggle('show');
-         }
-
-         closeMobileSidebar() {
-             const sidebar = document.getElementById('sidebar');
-             const overlay = document.getElementById('sidebar-overlay');
-
-             sidebar.classList.remove('open');
-             overlay.classList.remove('show');
-         }
-
-         handleLogout() {
-             if (confirm('確定要登出嗎？')) {
-             localStorage.removeItem('isAuthenticated');
-             localStorage.removeItem('currentUser');
-             window.location.href = 'login.html';
-         }
-         }
-
-         updateStatusIndicator(elementId, status) {
-             const indicator = document.getElementById(elementId);
-             if (indicator) {
-             indicator.className = `status-indicator ${status}`;
-         }
-         }
-
-         getStatusText(status) {
-             const statusMap = {
-             online: '在線',
-             away: '離開',
-             busy: '忙碌'
-         };
-             return statusMap[status] || '離線';
-         }
-
-         formatTime(date) {
-             return date.toLocaleTimeString('zh-TW', {
-             hour: '2-digit',
-             minute: '2-digit',
-             hour12: false
-         });
-         }
-
-         showNotification(message, type = 'info') {
-             const notification = document.createElement('div');
-             notification.className = `notification ${type}`;
-             notification.textContent = message;
-
-             const container = document.getElementById('notifications-container');
-             container.appendChild(notification);
-
-         setTimeout(() => {
-             if (notification.parentNode) {
-             notification.remove();
-         }
-         }, 3000);
-         }
-
-         getDemoChatData(chatId) {
-             const chats = {
-         '1': {
-             id: '1',
-             name: 'Alice Johnson',
-             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice',
-             status: 'online'
-         },
-         '2': {
-             id: '2',
-             name: 'Bob Smith',
-             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob',
-             status: 'away'
-         },
-         '3': {
-             id: '3',
-             name: 'Carol White',
-             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=carol',
-             status: 'busy'
-         }
-         };
-             return chats[chatId];
-         }
-
-         getDemoContactData(contactId) {
-             const contacts = {
-         '1': {
-             id: '1',
-             name: 'Charlie Brown',
-             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=charlie',
-             status: 'online'
-         },
-         '2': {
-             id: '2',
-             name: 'Diana Wilson',
-             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=diana',
-             status: 'busy'
-         },
-         '3': {
-             id: '3',
-             name: 'Eve Davis',
-             avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=eve',
-             status: 'away'
-         }
-         };
-             return contacts[contactId];
-         }
-
-         getDemoMessages(chatId) {
-             const messages = {
-         '1': [
-         {
-             id: '1',
-             content: '你好！最近怎麼樣？',
-             isOwn: false,
-             time: '09:30'
-         },
-         {
-             id: '2',
-             content: '很好啊！工作很忙，但還算順利 😊',
-             isOwn: true,
-             time: '09:31'
-         },
-         {
-             id: '3',
-             content: '那就好！有空一起喝咖啡嗎？',
-             isOwn: false,
-             time: '09:32'
-         }
-         ]
-         };
-             return messages[chatId] || [];
-         }
-
-         loadDemoData() {
-         // 初始化演示數據
-         console.log('Elite Chat App loaded successfully');
-         }
-         }
-
-        // 檢查屏幕大小並顯示移動端標題
-           function checkMobileHeader() {
-            const mobileHeader = document.getElementById('mobile-header');
-            if (window.innerWidth <= 768) {
-        mobileHeader.style.display = 'flex';
-        } else {
-              mobileHeader.style.display = 'none';
-          }
-        }
-
-        // 初始化應用
-           document.addEventListener('DOMContentLoaded', () => {
-                                                                 new EliteChatApp();
-                                                             checkMobileHeader();
-                                                                 window.addEventListener('resize', checkMobileHeader);
-                                                             });
-        </script>
-        </body>
-        </html>-picker-content {
-              height: calc(100% - 60px);
-              overflow-y: auto;
-              padding: var(--spacing-sm);
-          }
-
-        .emoji-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: var(--spacing-xs);
-        }
-
-        .emoji-item {
-            width: 32px;
-            height: 32px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--font-size-lg);
-            transition: var(--transition-fast);
-        }
-
-        .emoji-item:hover {
-            background-color: var(--bg-tertiary);
-            transform: scale(1.2);
-        }
-
-        .online-users {
-            border-top: 1px solid var(--border-light);
-            padding: var(--spacing-md) 0;
-        }
-
-        .online-users h4 {
-            padding: 0 var(--spacing-lg);
-            margin: 0 0 var(--spacing-sm) 0;
-            font-size: var(--font-size-sm);
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .online-user {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-xs) var(--spacing-lg);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-
-        .online-user:hover {
-            background-color: var(--bg-tertiary);
-        }
-
-        .online-user-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: var(--radius-full);
-            object-fit: cover;
-            position: relative;
-        }
-
-        .online-user-name {
-            font-size: var(--font-size-sm);
-            color: var(--text-primary);
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .call-notification {
-            position: fixed;
-            top: var(--spacing-lg);
-            right: var(--spacing-lg);
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xl);
-            padding: var(--spacing-lg);
-            z-index: var(--z-toast);
-            min-width: 300px;
-            border-left: 4px solid var(--success-color);
-            display: none;
-        }
-
-        .call-notification.show {
-            display: block;
-            animation: slideInRight 0.3s ease-out;
-        }
-
-        .call-header {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-        }
-
-        .call-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-full);
-            object-fit: cover;
-        }
-
-        .call-info h4 {
-            margin: 0;
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .call-info p {
-            margin: 0;
-            font-size: var(--font-size-sm);
-            color: var(--text-secondary);
-        }
-
-        .call-actions {
-            display: flex;
-            gap: var(--spacing-sm);
-            justify-content: center;
-        }
-
-        .call-accept {
-            background: var(--success-color);
-            color: var(--white);
-        }
-
-        .call-decline {
-            background: var(--error-color);
-            color: var(--white);
-        }
-
-        @media (max-width: 768px) {
-            .mobile-header {
-                display: flex;
-            }
-
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform var(--transition-normal);
-                position: fixed;
-                z-index: calc(var(--z-modal) + 1);
-                height: 100vh;
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .chat-main {
-                width: 100%;
-            }
-
-            .emoji-picker {
-                width: calc(100vw - 2rem);
-                max-width: 320px;
-                left: 50%;
-                transform: translateX(-50%);
-            }
-
-            .call-notification {
-                left: var(--spacing-md);
-                right: var(--spacing-md);
-                min-width: auto;
-            }
-        }
-
-        @keyframes popIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-    </style>
 </head>
 <body class="theme-light">
+
 <!-- Mobile Header -->
 <header class="mobile-header">
     <button class="mobile-menu-btn" id="mobile-menu-btn">
@@ -2293,14 +52,12 @@ new EliteChatApp();
             </div>
             <div class="user-info">
                 <h3 id="user-name" class="user-name">演示用戶</h3>
-                <div class="user-status">
-                    <select id="user-status-select" class="status-select">
-                        <option value="online">在線</option>
-                        <option value="away">離開</option>
-                        <option value="busy">忙碌</option>
-                        <option value="invisible">隱身</option>
-                    </select>
-                </div>
+                <select id="user-status-select" class="status-select">
+                    <option value="online">在線</option>
+                    <option value="away">離開</option>
+                    <option value="busy">忙碌</option>
+                    <option value="invisible">隱身</option>
+                </select>
             </div>
             <div class="user-actions">
                 <button class="btn-icon" id="settings-btn" title="設置">
@@ -2444,23 +201,6 @@ new EliteChatApp();
                         </div>
                     </div>
                 </div>
-
-                <!-- Online Users Section -->
-                <div class="online-users">
-                    <h4>在線用戶 (5)</h4>
-                    <div class="online-user">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=frank" alt="Frank" class="online-user-avatar">
-                        <span class="online-user-name">Frank Miller</span>
-                    </div>
-                    <div class="online-user">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=grace" alt="Grace" class="online-user-avatar">
-                        <span class="online-user-name">Grace Lee</span>
-                    </div>
-                    <div class="online-user">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=henry" alt="Henry" class="online-user-avatar">
-                        <span class="online-user-name">Henry Taylor</span>
-                    </div>
-                </div>
             </div>
 
             <!-- Rooms Tab -->
@@ -2576,7 +316,7 @@ new EliteChatApp();
 
             <!-- Messages Container -->
             <div id="messages-container" class="messages-container">
-                <!-- Demo messages will be inserted here -->
+                <!-- Messages will be inserted here -->
             </div>
 
             <!-- Reply Preview -->
@@ -2641,18 +381,6 @@ new EliteChatApp();
         </button>
         <button class="emoji-category-btn" data-category="food">
             <i class="fas fa-utensils"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="activity">
-            <i class="fas fa-futbol"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="travel">
-            <i class="fas fa-plane"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="objects">
-            <i class="fas fa-lightbulb"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="symbols">
-            <i class="fas fa-heart"></i>
         </button>
     </div>
     <div class="emoji-picker-content">
@@ -2735,7 +463,7 @@ new EliteChatApp();
 <!-- Notifications Container -->
 <div id="notifications-container" class="notifications-container"></div>
 
-<!-- JavaScript -->
+<!-- External JavaScript -->
 <script src="../assets/js/utils/constants.js"></script>
 <script src="../assets/js/utils/helpers.js"></script>
 <script src="../assets/js/utils/validators.js"></script>
@@ -2744,35 +472,77 @@ new EliteChatApp();
 <script src="../assets/js/services/auth.js"></script>
 <script src="../assets/js/services/websocket.js"></script>
 <script src="../assets/js/components/Notification.js"></script>
+<script src="../assets/js/components/Chat.js"></script>
+<script src="../assets/js/components/EmojiPicker.js"></script>
+<script src="../assets/js/components/VoiceRecorder.js"></script>
+<script src="../assets/js/app.js"></script>
+
+<!-- Fallback JavaScript for missing external files -->
+<script>
+    // Fallback implementations if external files are missing
+    if (typeof StorageService === 'undefined') {
+        window.StorageService = class {
+            get(key) { return localStorage.getItem(key); }
+            set(key, value) { localStorage.setItem(key, value); }
+            remove(key) { localStorage.removeItem(key); }
+        };
+    }
+
+    if (typeof ApiService === 'undefined') {
+        window.ApiService = class {
+            async request(url, options) {
+                // Mock API service
+                return { success: true, data: {} };
+            }
+        };
+    }
+
+    if (typeof AuthService === 'undefined') {
+        window.AuthService = class {
+            async login(data) { return { success: true, data: {} }; }
+            async logout() { return { success: true }; }
+            async getStatus() { return { success: true, data: { authenticated: true } }; }
+        };
+    }
+
+    if (typeof NotificationComponent === 'undefined') {
+        window.NotificationComponent = class {
+            show(message, type, duration = 3000) {
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+        };
+    }
+</script>
 
 <script>
+    // Elite Chat Application
     class EliteChatApp {
         constructor() {
             this.currentUser = null;
             this.currentChat = null;
             this.currentTheme = 'light';
             this.isRecording = false;
-            this.recordingDuration = 0;
-            this.recordingInterval = null;
-            this.typingTimeout = null;
             this.emojiCategories = {
                 smileys: ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘'],
                 people: ['👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕'],
                 nature: ['🌱', '🌿', '🍀', '🌾', '🌵', '🌲', '🌳', '🌴', '🌸', '🌺', '🌻', '🌹', '🥀', '🌷', '💐', '🌼'],
-                food: ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆'],
-                activity: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🪀', '🏓', '🏸', '🥅', '🏒', '🏑', '🥍', '🏏'],
-                travel: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍', '🛵'],
-                objects: ['💡', '🔦', '🕯', '🪔', '🔥', '💥', '💫', '⭐', '🌟', '✨', '⚡', '☄', '💥', '🔥', '🌪', '🌈'],
-                symbols: ['❤', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣', '💕', '💞', '💓', '💗', '💖']
+                food: ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆']
             };
             this.init();
         }
 
         async init() {
-            // Check authentication
-            if (!this.checkAuth()) {
-                window.location.href = 'login.html';
-                return;
+            // Check authentication (but don't redirect for demo)
+            const isAuth = this.checkAuth();
+            if (!isAuth) {
+                console.log('No authentication found, using demo mode');
+                // Set demo authentication
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('currentUser', JSON.stringify({
+                    id: 'demo',
+                    username: '演示用戶',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
+                }));
             }
 
             this.loadUserData();
@@ -2780,34 +550,51 @@ new EliteChatApp();
             this.bindEvents();
             this.initEmojiPicker();
             this.loadDemoData();
-
             console.log('Elite Chat App initialized');
         }
 
         checkAuth() {
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-            const currentUser = localStorage.getItem('currentUser');
-            return isAuthenticated === 'true' && currentUser;
+            try {
+                const isAuthenticated = localStorage.getItem('isAuthenticated');
+                const currentUser = localStorage.getItem('currentUser');
+                return isAuthenticated === 'true' && currentUser && currentUser !== 'null';
+            } catch (error) {
+                console.error('Auth check error:', error);
+                return false;
+            }
         }
 
         loadUserData() {
-            const userData = localStorage.getItem('currentUser');
-            if (userData) {
-                this.currentUser = JSON.parse(userData);
+            try {
+                const userData = localStorage.getItem('currentUser');
+                if (userData && userData !== 'null') {
+                    this.currentUser = JSON.parse(userData);
+                    this.updateUserProfile();
+                } else {
+                    // Set default demo user if no user data
+                    this.currentUser = {
+                        id: 'demo',
+                        username: '演示用戶',
+                        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
+                    };
+                    this.updateUserProfile();
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Fallback to demo user
+                this.currentUser = {
+                    id: 'demo',
+                    username: '演示用戶',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
+                };
                 this.updateUserProfile();
             }
         }
 
         updateUserProfile() {
             if (!this.currentUser) return;
-
             document.getElementById('user-name').textContent = this.currentUser.username;
             document.getElementById('user-avatar').src = this.currentUser.avatar;
-
-            // Set initial status
-            const statusSelect = document.getElementById('user-status-select');
-            statusSelect.value = 'online';
-            this.updateStatusIndicator('user-status-indicator', 'online');
         }
 
         initTheme() {
@@ -2819,7 +606,6 @@ new EliteChatApp();
             this.currentTheme = theme;
             document.body.className = `theme-${theme}`;
             localStorage.setItem('theme', theme);
-
             const themeIcon = document.querySelector('#theme-toggle-btn i');
             if (themeIcon) {
                 themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
@@ -2860,7 +646,6 @@ new EliteChatApp();
             if (messageInput) {
                 messageInput.addEventListener('input', this.handleMessageInput.bind(this));
                 messageInput.addEventListener('keydown', this.handleMessageKeydown.bind(this));
-                messageInput.addEventListener('paste', this.handleMessagePaste.bind(this));
             }
 
             // Buttons
@@ -2874,34 +659,8 @@ new EliteChatApp();
             // File input
             document.getElementById('file-input')?.addEventListener('change', this.handleFileSelect.bind(this));
 
-            // Voice recording
-            document.getElementById('cancel-recording')?.addEventListener('click', this.cancelRecording.bind(this));
-            document.getElementById('send-recording')?.addEventListener('click', this.sendRecording.bind(this));
-
-            // Status change
-            document.getElementById('user-status-select')?.addEventListener('change', this.handleStatusChange.bind(this));
-
-            // Reply/Upload cancel
-            document.getElementById('cancel-reply')?.addEventListener('click', this.cancelReply.bind(this));
-
-            // Chat actions
-            document.getElementById('voice-call-btn')?.addEventListener('click', this.startVoiceCall.bind(this));
-            document.getElementById('video-call-btn')?.addEventListener('click', this.startVideoCall.bind(this));
-
-            // Emoji picker
-            this.bindEmojiEvents();
-
-            // Context menu
-            this.bindContextMenu();
-
-            // Search
-            document.getElementById('chat-search')?.addEventListener('input', this.handleSearch.bind(this));
-            document.getElementById('contact-search')?.addEventListener('input', this.handleSearch.bind(this));
-            document.getElementById('room-search')?.addEventListener('input', this.handleSearch.bind(this));
-
             // Global events
             document.addEventListener('click', this.handleGlobalClick.bind(this));
-            document.addEventListener('keydown', this.handleGlobalKeydown.bind(this));
         }
 
         bindItemSelection() {
@@ -2933,14 +692,8 @@ new EliteChatApp();
         selectChat(chatId, element) {
             this.clearActiveItems();
             element.classList.add('active');
-
-            // Clear unread count
             const unreadCount = element.querySelector('.unread-count');
-            if (unreadCount) {
-                unreadCount.remove();
-            }
-
-            // Load chat data
+            if (unreadCount) unreadCount.remove();
             const chatData = this.getDemoChatData(chatId);
             this.loadChat(chatData);
             this.closeMobileSidebar();
@@ -2949,8 +702,6 @@ new EliteChatApp();
         selectContact(contactId, element) {
             this.clearActiveItems();
             element.classList.add('active');
-
-            // Start new chat with contact
             const contactData = this.getDemoContactData(contactId);
             this.startNewChatWithContact(contactData);
             this.closeMobileSidebar();
@@ -2959,8 +710,6 @@ new EliteChatApp();
         selectRoom(roomId, element) {
             this.clearActiveItems();
             element.classList.add('active');
-
-            // Load room data
             const roomData = this.getDemoRoomData(roomId);
             this.loadRoom(roomData);
             this.closeMobileSidebar();
@@ -3005,7 +754,6 @@ new EliteChatApp();
         updateChatHeader(chatData) {
             document.getElementById('chat-name').textContent = chatData.name;
             document.getElementById('chat-avatar').src = chatData.avatar;
-
             if (chatData.type === 'room') {
                 document.getElementById('chat-status-text').textContent = chatData.description;
                 document.getElementById('chat-status-indicator').style.display = 'none';
@@ -3028,138 +776,30 @@ new EliteChatApp();
         displayMessages(messages) {
             const container = document.getElementById('messages-container');
             container.innerHTML = '';
-
             messages.forEach(message => {
                 const messageElement = this.createMessageElement(message);
                 container.appendChild(messageElement);
             });
-
-            // Scroll to bottom
             container.scrollTop = container.scrollHeight;
         }
 
         createMessageElement(message) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${message.isOwn ? 'own' : ''}`;
-            messageDiv.dataset.messageId = message.id;
-
-            const isOwn = message.isOwn;
-            const showAvatar = !isOwn && this.currentChat.type === 'room';
-
             messageDiv.innerHTML = `
-                    ${showAvatar ? `<img src="${message.sender.avatar}" alt="${message.sender.name}" class="message-avatar">` : ''}
-                    <div class="message-content-wrapper">
-                        ${!isOwn && this.currentChat.type === 'room' ? `
-                            <div class="message-header">
-                                <span class="message-sender">${message.sender.name}</span>
-                                <span class="message-time">${message.time}</span>
-                            </div>
-                        ` : ''}
-                        <div class="message-bubble">
-                            ${message.replyTo ? `
-                                <div class="message-reply">
-                                    <div class="reply-line"></div>
-                                    <div class="reply-content">
-                                        <div class="reply-sender">${message.replyTo.sender}</div>
-                                        <div class="reply-text">${message.replyTo.content}</div>
-                                    </div>
-                                </div>
-                            ` : ''}
-                            ${this.renderMessageContent(message)}
-                            <div class="message-meta">
-                                <span class="message-time">${message.time}</span>
-                                ${isOwn ? `<span class="message-status ${message.status}"><i class="fas fa-check${message.status === 'read' ? '-double' : ''}"></i></span>` : ''}
-                            </div>
-                        </div>
-                        <div class="message-actions">
-                            <button class="message-action-btn" data-action="reply" title="回覆">
-                                <i class="fas fa-reply"></i>
-                            </button>
-                            <button class="message-action-btn" data-action="more" title="更多">
-                                <i class="fas fa-ellipsis-h"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-            // Bind message actions
-            messageDiv.querySelectorAll('.message-action-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const action = btn.dataset.action;
-                    if (action === 'reply') {
-                        this.replyToMessage(message);
-                    } else if (action === 'more') {
-                        this.showMessageContextMenu(e, message);
-                    }
-                });
-            });
-
-            // Right-click context menu
-            messageDiv.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                this.showMessageContextMenu(e, message);
-            });
-
+            <div class="message-bubble">
+                <p class="message-text">${message.content}</p>
+                <div class="message-time">${message.time}</div>
+            </div>
+        `;
             return messageDiv;
         }
 
-        renderMessageContent(message) {
-            switch (message.type) {
-                case 'text':
-                    return `<p class="message-text">${this.formatMessageText(message.content)}</p>`;
-                case 'image':
-                    return `<img src="${message.content}" alt="圖片" class="message-image" onclick="this.parentElement.parentElement.classList.toggle('fullscreen')">`;
-                case 'file':
-                    return `
-                            <div class="message-file">
-                                <div class="file-icon">
-                                    <i class="fas fa-file"></i>
-                                </div>
-                                <div class="file-info">
-                                    <div class="file-name">${message.fileName}</div>
-                                    <div class="file-size">${message.fileSize}</div>
-                                </div>
-                            </div>
-                        `;
-                case 'audio':
-                    return `
-                            <div class="message-audio">
-                                <button class="audio-play-btn">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                                <div class="audio-waveform">
-                                    <div class="animate-audio-wave-1"></div>
-                                    <div class="animate-audio-wave-2"></div>
-                                    <div class="animate-audio-wave-3"></div>
-                                </div>
-                                <span class="audio-duration">${message.duration}</span>
-                            </div>
-                        `;
-                default:
-                    return `<p class="message-text">${message.content}</p>`;
-            }
-        }
-
-        formatMessageText(text) {
-            // Convert URLs to links
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            text = text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-
-            // Convert newlines to <br>
-            text = text.replace(/\n/g, '<br>');
-
-            return text;
-        }
-
         switchTab(tabName) {
-            // Update active tab
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
-
-            // Show corresponding content
             document.querySelectorAll('.tab-pane').forEach(pane => {
                 pane.classList.remove('active');
             });
@@ -3169,42 +809,24 @@ new EliteChatApp();
         handleMessageInput() {
             const messageInput = document.getElementById('message-input');
             const content = messageInput.textContent.trim();
-
             this.updateSendButton();
-
-            // Typing indicator
-            if (content && this.currentChat) {
-                this.sendTypingIndicator(true);
-            } else {
-                this.sendTypingIndicator(false);
-            }
         }
 
         handleMessageKeydown(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendMessage();
-            } else if (e.key === 'Escape') {
-                this.cancelReply();
             }
-        }
-
-        handleMessagePaste(e) {
-            e.preventDefault();
-            const text = (e.originalEvent || e).clipboardData.getData('text/plain');
-            document.execCommand('insertText', false, text);
         }
 
         updateSendButton() {
             const messageInput = document.getElementById('message-input');
             const sendBtn = document.getElementById('send-btn');
             const voiceBtn = document.getElementById('voice-btn');
-
             const hasContent = messageInput.textContent.trim().length > 0;
 
             if (sendBtn && voiceBtn) {
                 sendBtn.disabled = !hasContent;
-
                 if (hasContent) {
                     sendBtn.classList.remove('hidden');
                     voiceBtn.classList.add('hidden');
@@ -3218,7 +840,6 @@ new EliteChatApp();
         sendMessage() {
             const messageInput = document.getElementById('message-input');
             const content = messageInput.textContent.trim();
-
             if (!content || !this.currentChat) return;
 
             const message = {
@@ -3227,7 +848,6 @@ new EliteChatApp();
                 type: 'text',
                 isOwn: true,
                 time: this.formatTime(new Date()),
-                status: 'sent',
                 sender: {
                     id: this.currentUser.id,
                     name: this.currentUser.username,
@@ -3235,27 +855,10 @@ new EliteChatApp();
                 }
             };
 
-            // Add reply reference if replying
-            const replyPreview = document.getElementById('reply-preview');
-            if (!replyPreview.classList.contains('hidden')) {
-                message.replyTo = {
-                    id: this.replyingToMessage.id,
-                    sender: this.replyingToMessage.sender.name,
-                    content: this.replyingToMessage.content
-                };
-            }
-
             this.addMessageToChat(message);
-
-            // Clear input
             messageInput.textContent = '';
             this.updateSendButton();
-            this.cancelReply();
-
-            // Simulate response
-            setTimeout(() => {
-                this.simulateResponse();
-            }, 1000 + Math.random() * 2000);
+            setTimeout(() => this.simulateResponse(), 1000 + Math.random() * 2000);
         }
 
         addMessageToChat(message) {
@@ -3263,25 +866,11 @@ new EliteChatApp();
             const messageElement = this.createMessageElement(message);
             container.appendChild(messageElement);
             container.scrollTop = container.scrollHeight;
-
-            // Animate in
-            messageElement.classList.add('animate-message-in');
         }
 
         simulateResponse() {
             if (!this.currentChat) return;
-
-            const responses = [
-                "好的，我知道了！",
-                "謝謝你的消息 😊",
-                "聽起來不錯",
-                "我待會回覆你",
-                "👍",
-                "讓我想想...",
-                "有道理",
-                "好主意！"
-            ];
-
+            const responses = ["好的，我知道了！", "謝謝你的消息 😊", "聽起來不錯", "我待會回覆你", "👍", "有道理"];
             const response = {
                 id: Date.now().toString(),
                 content: responses[Math.floor(Math.random() * responses.length)],
@@ -3294,7 +883,302 @@ new EliteChatApp();
                     avatar: this.currentChat.avatar
                 }
             };
-
             this.addMessageToChat(response);
         }
 
+        initEmojiPicker() {
+            this.renderEmojiCategory('smileys');
+            document.querySelectorAll('.emoji-category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.emoji-category-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.renderEmojiCategory(btn.dataset.category);
+                });
+            });
+            document.getElementById('emoji-grid').addEventListener('click', (e) => {
+                if (e.target.classList.contains('emoji-item')) {
+                    this.insertEmoji(e.target.textContent);
+                    this.toggleEmojiPicker(); // Close emoji picker after selection
+                }
+            });
+        }
+
+        renderEmojiCategory(category) {
+            const emojiGrid = document.getElementById('emoji-grid');
+            const emojis = this.emojiCategories[category] || [];
+            emojiGrid.innerHTML = emojis.map(emoji =>
+                `<button type="button" class="emoji-item" tabindex="0">${emoji}</button>`
+            ).join('');
+        }
+
+        toggleEmojiPicker() {
+            const emojiPicker = document.getElementById('emoji-picker');
+            if (emojiPicker) {
+                emojiPicker.classList.toggle('show');
+            }
+        }
+
+        insertEmoji(emoji) {
+            const messageInput = document.getElementById('message-input');
+            if (messageInput) {
+                // Insert emoji at cursor position or at the end
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0 && messageInput.contains(selection.focusNode)) {
+                    const range = selection.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(emoji));
+                    range.collapse(false);
+                } else {
+                    messageInput.textContent += emoji;
+                }
+                messageInput.focus();
+                this.updateSendButton();
+            }
+        }
+
+        toggleVoiceRecording() {
+            if (this.isRecording) {
+                this.stopRecording();
+            } else {
+                this.startRecording();
+            }
+        }
+
+        startRecording() {
+            this.isRecording = true;
+            this.recordingDuration = 0;
+            const voiceRecording = document.getElementById('voice-recording');
+            if (voiceRecording) {
+                voiceRecording.classList.remove('hidden');
+            }
+
+            // Start timer
+            this.recordingInterval = setInterval(() => {
+                this.recordingDuration++;
+                const durationEl = document.getElementById('recording-duration');
+                if (durationEl) {
+                    durationEl.textContent = this.formatDuration(this.recordingDuration);
+                }
+            }, 1000);
+
+            this.showNotification('開始錄音...', 'info');
+        }
+
+        stopRecording() {
+            this.isRecording = false;
+            if (this.recordingInterval) {
+                clearInterval(this.recordingInterval);
+            }
+            const voiceRecording = document.getElementById('voice-recording');
+            if (voiceRecording) {
+                voiceRecording.classList.add('hidden');
+            }
+            this.showNotification('錄音已停止', 'info');
+        }
+
+        formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                this.showNotification(`已選擇文件: ${file.name}`, 'success');
+            });
+            e.target.value = '';
+        }
+
+        toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        }
+
+        closeMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+
+        handleLogout() {
+            if (confirm('確定要登出嗎？')) {
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('currentUser');
+                window.location.href = 'login.html';
+            }
+        }
+
+        handleGlobalClick(e) {
+            // Close emoji picker if clicking outside
+            const emojiPicker = document.getElementById('emoji-picker');
+            const emojiBtn = document.getElementById('emoji-btn');
+            if (emojiPicker && emojiBtn &&
+                !emojiPicker.contains(e.target) &&
+                !emojiBtn.contains(e.target) &&
+                emojiPicker.classList.contains('show')) {
+                emojiPicker.classList.remove('show');
+            }
+
+            // Close context menu if clicking outside
+            const contextMenu = document.getElementById('context-menu');
+            if (contextMenu && !contextMenu.contains(e.target)) {
+                contextMenu.classList.remove('show');
+            }
+        }
+
+        updateStatusIndicator(elementId, status) {
+            const indicator = document.getElementById(elementId);
+            if (indicator) {
+                indicator.className = `status-indicator ${status}`;
+            }
+        }
+
+        getStatusText(status) {
+            const statusMap = {
+                online: '在線',
+                away: '離開',
+                busy: '忙碌'
+            };
+            return statusMap[status] || '離線';
+        }
+
+        formatTime(date) {
+            return date.toLocaleTimeString('zh-TW', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+
+        handleSearch(e, type) {
+            const query = e.target.value.toLowerCase();
+            const items = document.querySelectorAll(`.${type}-item`);
+
+            items.forEach(item => {
+                const nameElement = item.querySelector(`.${type}-name`);
+                if (nameElement) {
+                    const name = nameElement.textContent.toLowerCase();
+                    const shouldShow = name.includes(query);
+                    item.style.display = shouldShow ? 'flex' : 'none';
+                }
+            });
+        }
+
+        showNotification(message, type = 'info', duration = 3000) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+
+            // Create notification content
+            const content = document.createElement('div');
+            content.className = 'notification-content';
+
+            const icon = document.createElement('i');
+            icon.className = `fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}`;
+
+            const text = document.createElement('span');
+            text.textContent = message;
+
+            content.appendChild(icon);
+            content.appendChild(text);
+            notification.appendChild(content);
+
+            // Style the notification
+            notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            max-width: 400px;
+        `;
+
+            // Add to notifications container or body
+            const container = document.getElementById('notifications-container') || document.body;
+            container.appendChild(notification);
+
+            // Remove notification after duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOutRight 0.3s ease-out';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, duration);
+        }
+
+        // Demo data methods
+        getDemoChatData(chatId) {
+            const chats = {
+                '1': { id: '1', name: 'Alice Johnson', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice', status: 'online' },
+                '2': { id: '2', name: 'Bob Smith', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob', status: 'away' },
+                '3': { id: '3', name: 'Carol White', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=carol', status: 'busy' }
+            };
+            return chats[chatId];
+        }
+
+        getDemoContactData(contactId) {
+            const contacts = {
+                '1': { id: '1', name: 'Charlie Brown', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=charlie', status: 'online' },
+                '2': { id: '2', name: 'Diana Wilson', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=diana', status: 'busy' },
+                '3': { id: '3', name: 'Eve Davis', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=eve', status: 'away' }
+            };
+            return contacts[contactId];
+        }
+
+        getDemoRoomData(roomId) {
+            const rooms = {
+                '1': { id: '1', name: '開發討論', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=dev', description: '15 成員 · 3 在線', type: 'room' },
+                '2': { id: '2', name: '設計團隊', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=design', description: '8 成員 · 2 在線', type: 'room' },
+                '3': { id: '3', name: '項目管理', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=project', description: '25 成員 · 8 在線', type: 'room' }
+            };
+            return rooms[roomId];
+        }
+
+        getDemoMessages(chatId) {
+            const messages = {
+                '1': [
+                    { id: '1', content: '你好！最近怎麼樣？', isOwn: false, time: '09:30' },
+                    { id: '2', content: '很好啊！工作很忙，但還算順利 😊', isOwn: true, time: '09:31' },
+                    { id: '3', content: '那就好！有空一起喝咖啡嗎？', isOwn: false, time: '09:32' }
+                ]
+            };
+            return messages[chatId] || [];
+        }
+
+        getDemoRoomMessages(roomId) {
+            const messages = {
+                '1': [
+                    { id: '1', content: '大家好！新功能的開發進度如何？', isOwn: false, time: '10:00' },
+                    { id: '2', content: '前端部分已完成 80%，預計本週末可以完成', isOwn: true, time: '10:01' },
+                    { id: '3', content: '後端 API 也差不多了，今天會部署到測試環境', isOwn: false, time: '10:02' }
+                ]
+            };
+            return messages[roomId] || [];
+        }
+
+        loadDemoData() {
+            console.log('Elite Chat App loaded successfully');
+        }
+    }
+
+    // Initialize app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        new EliteChatApp();
+    });
+</script>
+</body>
+</html>
