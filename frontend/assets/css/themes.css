@@ -1,15 +1,11 @@
-/* frontend/assets/css/themes.css */
 
-/* Light Theme (Default) */
 .theme-light {
-    /* Primary Colors */
     --primary-color: #667eea;
     --primary-dark: #5a67d8;
     --primary-light: #a3bffa;
     --secondary-color: #764ba2;
     --accent-color: #f093fb;
 
-    /* Neutral Colors */
     --white: #ffffff;
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
@@ -22,20 +18,17 @@
     --gray-800: #1f2937;
     --gray-900: #111827;
 
-    /* Status Colors */
     --success-color: #10b981;
     --warning-color: #f59e0b;
     --error-color: #ef4444;
     --info-color: #3b82f6;
 
-    /* Background Colors */
     --bg-primary: var(--white);
     --bg-secondary: var(--gray-50);
     --bg-tertiary: var(--gray-100);
     --bg-accent: var(--primary-color);
     --bg-overlay: rgba(0, 0, 0, 0.5);
 
-    /* Text Colors */
     --text-primary: var(--gray-900);
     --text-secondary: var(--gray-600);
     --text-tertiary: var(--gray-400);

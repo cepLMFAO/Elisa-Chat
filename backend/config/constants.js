@@ -248,7 +248,6 @@ module.exports = {
         RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
         INTERNAL_ERROR: 'INTERNAL_ERROR'
     },
-
     // 日誌級別
     LOG_LEVELS: {
         ERROR: 'error',
@@ -257,7 +256,6 @@ module.exports = {
         HTTP: 'http',
         DEBUG: 'debug'
     },
-
     // 默認設置
     DEFAULTS: {
         THEME: 'light',
