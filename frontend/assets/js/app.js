@@ -1,5 +1,3 @@
-// frontend/assets/js/app.js
-
 class EliteChatApp {
     constructor() {
         this.user = null;
