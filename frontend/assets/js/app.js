@@ -17,17 +17,26 @@ class EliteChatApp {
             // Show loading screen
             this.showLoading();
 
+            // Check authentication first
+            if (!this.checkAuthStatus()) {
+                this.redirectToLogin();
+                return;
+            }
+
             // Initialize services
             await this.initializeServices();
 
             // Bind event listeners
             this.bindEventListeners();
 
-            // Check authentication status
-            await this.checkAuthStatus();
+            // Load user data and authenticate
+            await this.loadUserData();
 
             // Initialize theme
             this.initializeTheme();
+
+            // Show chat app
+            this.showChatApp();
 
             // Hide loading screen
             this.hideLoading();
@@ -35,36 +44,70 @@ class EliteChatApp {
             console.log('Elite Chat App initialized successfully');
         } catch (error) {
             console.error('Failed to initialize app:', error);
-            this.showError('應用程式初始化失敗，請刷新頁面重試');
+            this.showError('應用程式初始化失敗，請重新登錄');
+            this.redirectToLogin();
+        }
+    }
+
+    checkAuthStatus() {
+        try {
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            const currentUser = localStorage.getItem('currentUser');
+            return isAuthenticated === 'true' && currentUser && currentUser !== 'null';
+        } catch (error) {
+            console.error('Auth status check error:', error);
+            return false;
+        }
+    }
+
+    redirectToLogin() {
+        window.location.href = '/pages/login.html';
+    }
+
+    async loadUserData() {
+        try {
+            const userData = localStorage.getItem('currentUser');
+            if (userData && userData !== 'null') {
+                this.user = JSON.parse(userData);
+                this.isAuthenticated = true;
+                this.updateUserProfile();
+            } else {
+                throw new Error('No user data found');
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            throw error;
         }
     }
 
     async initializeServices() {
-        // Initialize storage service
-        if (typeof StorageService !== 'undefined') {
-            this.storage = new StorageService();
-        }
+        try {
+            // Initialize storage service
+            if (typeof StorageService !== 'undefined') {
+                this.storage = new StorageService();
+            }
 
-        // Initialize API service
-        if (typeof ApiService !== 'undefined') {
-            this.api = new ApiService();
-        }
+            // Initialize API service
+            if (typeof ApiService !== 'undefined') {
+                this.api = new ApiService();
+            }
 
-        // Initialize auth service
-        if (typeof AuthService !== 'undefined') {
-            this.auth = new AuthService();
-        }
+            // Initialize auth service
+            if (typeof AuthService !== 'undefined') {
+                this.auth = new AuthService();
+            }
 
-        // Initialize notification service
-        if (typeof NotificationComponent !== 'undefined') {
-            this.notificationService = new NotificationComponent();
+            // Initialize notification service
+            if (typeof NotificationComponent !== 'undefined') {
+                this.notificationService = new NotificationComponent();
+            }
+        } catch (error) {
+            console.error('Service initialization failed:', error);
+            throw error;
         }
     }
 
     bindEventListeners() {
-        // Authentication form handlers
-        this.bindAuthHandlers();
-
         // Chat interface handlers
         this.bindChatHandlers();
 
@@ -80,80 +123,6 @@ class EliteChatApp {
         window.addEventListener('offline', this.handleOffline.bind(this));
     }
 
-    bindAuthHandlers() {
-        // Login form
-        const loginForm = document.getElementById('login-form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', this.handleLogin.bind(this));
-        }
-
-        // Register form
-        const registerForm = document.getElementById('register-form');
-        if (registerForm) {
-            registerForm.addEventListener('submit', this.handleRegister.bind(this));
-        }
-
-        // Forgot password form
-        const forgotForm = document.getElementById('forgot-password-form');
-        if (forgotForm) {
-            forgotForm.addEventListener('submit', this.handleForgotPassword.bind(this));
-        }
-
-        // Auth navigation
-        document.getElementById('show-register')?.addEventListener('click', () => {
-            this.showAuthPage('register');
-        });
-
-        document.getElementById('show-login')?.addEventListener('click', () => {
-            this.showAuthPage('login');
-        });
-
-        document.getElementById('forgot-password-link')?.addEventListener('click', () => {
-            this.showAuthPage('forgot-password');
-        });
-
-        document.getElementById('back-to-login')?.addEventListener('click', () => {
-            this.showAuthPage('login');
-        });
-
-        // Password visibility toggles
-        document.querySelectorAll('.password-toggle').forEach(btn => {
-            btn.addEventListener('click', this.togglePasswordVisibility.bind(this));
-        });
-
-        // Password strength checker
-        const passwordInput = document.getElementById('register-password');
-        if (passwordInput) {
-            passwordInput.addEventListener('input', this.checkPasswordStrength.bind(this));
-        }
-
-        // Username/email availability checkers
-        const usernameInput = document.getElementById('register-username');
-        if (usernameInput) {
-            let timeoutId;
-            usernameInput.addEventListener('input', (e) => {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => {
-                    this.checkUsernameAvailability(e.target.value);
-                }, 500);
-            });
-        }
-
-        const emailInput = document.getElementById('register-email');
-        if (emailInput) {
-            let timeoutId;
-            emailInput.addEventListener('input', (e) => {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => {
-                    this.checkEmailAvailability(e.target.value);
-                }, 500);
-            });
-        }
-
-        // Logout handler
-        document.getElementById('logout-btn')?.addEventListener('click', this.handleLogout.bind(this));
-    }
-
     bindChatHandlers() {
         // Sidebar navigation
         document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -161,36 +130,6 @@ class EliteChatApp {
                 this.switchTab(e.target.dataset.tab);
             });
         });
-
-        // Message input
-        const messageInput = document.getElementById('message-input');
-        if (messageInput) {
-            messageInput.addEventListener('input', this.handleMessageInput.bind(this));
-            messageInput.addEventListener('keydown', this.handleMessageKeydown.bind(this));
-            messageInput.addEventListener('paste', this.handleMessagePaste.bind(this));
-        }
-
-        // Send button
-        document.getElementById('send-btn')?.addEventListener('click', this.sendMessage.bind(this));
-
-        // File attachment
-        document.getElementById('attach-btn')?.addEventListener('click', () => {
-            document.getElementById('file-input').click();
-        });
-
-        document.getElementById('file-input')?.addEventListener('change', this.handleFileSelect.bind(this));
-
-        // Emoji picker
-        document.getElementById('emoji-btn')?.addEventListener('click', this.toggleEmojiPicker.bind(this));
-
-        // Voice recording
-        document.getElementById('voice-btn')?.addEventListener('click', this.toggleVoiceRecording.bind(this));
-
-        // Chat actions
-        document.getElementById('voice-call-btn')?.addEventListener('click', this.startVoiceCall.bind(this));
-        document.getElementById('video-call-btn')?.addEventListener('click', this.startVideoCall.bind(this));
-        document.getElementById('chat-info-btn')?.addEventListener('click', this.showChatInfo.bind(this));
-        document.getElementById('chat-menu-btn')?.addEventListener('click', this.showChatMenu.bind(this));
 
         // Search inputs
         document.getElementById('chat-search')?.addEventListener('input', this.handleChatSearch.bind(this));
@@ -209,13 +148,17 @@ class EliteChatApp {
         // Settings button
         document.getElementById('settings-btn')?.addEventListener('click', this.showSettingsModal.bind(this));
 
-        // Reply cancel
-        document.getElementById('cancel-reply')?.addEventListener('click', this.cancelReply.bind(this));
+        // Logout handler
+        document.getElementById('logout-btn')?.addEventListener('click', this.handleLogout.bind(this));
+
+        // Mobile menu
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', this.toggleMobileSidebar.bind(this));
+        document.getElementById('sidebar-overlay')?.addEventListener('click', this.closeMobileSidebar.bind(this));
     }
 
     bindThemeHandlers() {
-        // Theme toggle button (if exists)
-        const themeToggle = document.querySelector('.theme-toggle');
+        // Theme toggle button
+        const themeToggle = document.querySelector('#theme-toggle-btn');
         if (themeToggle) {
             themeToggle.addEventListener('click', this.toggleTheme.bind(this));
         }
@@ -248,167 +191,30 @@ class EliteChatApp {
         });
     }
 
-    // Authentication Methods
-    async handleLogin(e) {
-        e.preventDefault();
-
-        const submitBtn = document.getElementById('login-btn');
-        const form = e.target;
-        const formData = new FormData(form);
-
-        try {
-            this.setButtonLoading(submitBtn, true);
-            this.clearFormErrors(form);
-
-            const loginData = {
-                identifier: formData.get('identifier'),
-                password: formData.get('password'),
-                twoFactorToken: formData.get('twoFactorToken') || undefined
-            };
-
-            const response = await this.auth.login(loginData);
-
-            if (response.success) {
-                this.user = response.data.user;
-                this.isAuthenticated = true;
-                this.showNotification('登錄成功！', 'success');
-                this.showChatApp();
-                this.connectWebSocket();
-            } else {
-                if (response.code === 'TWO_FACTOR_REQUIRED') {
-                    this.show2FAInput();
-                } else {
-                    this.showFormError(form, response.error);
-                }
-            }
-        } catch (error) {
-            console.error('Login error:', error);
-            this.showFormError(form, '登錄失敗，請稍後重試');
-        } finally {
-            this.setButtonLoading(submitBtn, false);
-        }
-    }
-
-    async handleRegister(e) {
-        e.preventDefault();
-
-        const submitBtn = document.getElementById('register-btn');
-        const form = e.target;
-        const formData = new FormData(form);
-
-        try {
-            this.setButtonLoading(submitBtn, true);
-            this.clearFormErrors(form);
-
-            const registerData = {
-                username: formData.get('username'),
-                email: formData.get('email'),
-                password: formData.get('password'),
-                confirmPassword: formData.get('confirmPassword')
-            };
-
-            // Client-side validation
-            if (!this.validateRegisterForm(registerData, form)) {
-                return;
-            }
-
-            const response = await this.auth.register(registerData);
-
-            if (response.success) {
-                this.user = response.data.user;
-                this.isAuthenticated = true;
-                this.showNotification('註冊成功！歡迎加入 Elite Chat', 'success');
-                this.showChatApp();
-                this.connectWebSocket();
-            } else {
-                this.showFormError(form, response.error);
-            }
-        } catch (error) {
-            console.error('Register error:', error);
-            this.showFormError(form, '註冊失敗，請稍後重試');
-        } finally {
-            this.setButtonLoading(submitBtn, false);
-        }
-    }
-
-    async handleForgotPassword(e) {
-        e.preventDefault();
-
-        const submitBtn = document.getElementById('forgot-btn');
-        const form = e.target;
-        const formData = new FormData(form);
-
-        try {
-            this.setButtonLoading(submitBtn, true);
-            this.clearFormErrors(form);
-
-            const email = formData.get('email');
-            const response = await this.auth.requestPasswordReset({ email });
-
-            if (response.success) {
-                this.showNotification('重置鏈接已發送到您的郵箱', 'success');
-                form.reset();
-            } else {
-                this.showFormError(form, response.error);
-            }
-        } catch (error) {
-            console.error('Forgot password error:', error);
-            this.showFormError(form, '發送失敗，請稍後重試');
-        } finally {
-            this.setButtonLoading(submitBtn, false);
-        }
-    }
-
     async handleLogout() {
+        if (!confirm('確定要登出嗎？')) return;
+
         try {
             if (this.socket) {
                 this.socket.disconnect();
             }
 
-            await this.auth.logout();
+            // Clear authentication data
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('currentUser');
+
             this.user = null;
             this.isAuthenticated = false;
             this.currentChat = null;
 
             this.showNotification('已成功登出', 'success');
-            this.showAuthPages();
+
+            setTimeout(() => {
+                this.redirectToLogin();
+            }, 1000);
         } catch (error) {
             console.error('Logout error:', error);
             this.showNotification('登出時發生錯誤', 'error');
-        }
-    }
-
-    // Chat Methods
-    async sendMessage() {
-        const messageInput = document.getElementById('message-input');
-        const content = messageInput.textContent.trim();
-
-        if (!content || !this.currentChat) return;
-
-        try {
-            const messageData = {
-                content,
-                type: 'text',
-                chatId: this.currentChat.id,
-                replyTo: this.replyTo || null
-            };
-
-            // Send via WebSocket
-            if (this.socket) {
-                this.socket.emit('send_message', messageData);
-            }
-
-            // Clear input
-            messageInput.textContent = '';
-            this.updateSendButton();
-            this.cancelReply();
-
-            // Stop typing indicator
-            this.sendTypingIndicator(false);
-
-        } catch (error) {
-            console.error('Send message error:', error);
-            this.showNotification('發送失敗', 'error');
         }
     }
 
@@ -456,39 +262,25 @@ class EliteChatApp {
         }
     }
 
-    showAuthPages() {
-        document.getElementById('auth-pages')?.classList.remove('hidden');
-        document.getElementById('chat-app')?.classList.add('hidden');
-        this.showAuthPage('login');
-    }
-
     showChatApp() {
         document.getElementById('auth-pages')?.classList.add('hidden');
         document.getElementById('chat-app')?.classList.remove('hidden');
         this.updateUserProfile();
         this.loadRecentChats();
-    }
-
-    showAuthPage(page) {
-        document.querySelectorAll('.auth-page').forEach(p => {
-            p.classList.remove('active');
-        });
-        document.getElementById(`${page}-page`)?.classList.add('active');
-    }
-
-    show2FAInput() {
-        const twoFactorGroup = document.getElementById('two-factor-group');
-        if (twoFactorGroup) {
-            twoFactorGroup.classList.remove('hidden');
-            document.getElementById('two-factor-token')?.focus();
-        }
+        this.connectWebSocket();
     }
 
     updateUserProfile() {
         if (!this.user) return;
 
-        document.getElementById('user-name').textContent = this.user.username;
-        document.getElementById('user-avatar').src = this.user.avatar;
+        const userNameEl = document.getElementById('user-name');
+        const userAvatarEl = document.getElementById('user-avatar');
+
+        if (userNameEl) userNameEl.textContent = this.user.username || 'Unknown User';
+        if (userAvatarEl) {
+            userAvatarEl.src = this.user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+            userAvatarEl.alt = `${this.user.username || 'User'} 的頭像`;
+        }
     }
 
     switchTab(tabName) {
@@ -518,247 +310,68 @@ class EliteChatApp {
         }
     }
 
-    setButtonLoading(button, loading) {
-        if (!button) return;
-
-        const btnText = button.querySelector('.btn-text');
-        const btnSpinner = button.querySelector('.btn-spinner');
-
-        if (loading) {
-            button.classList.add('loading');
-            button.disabled = true;
-            if (btnText) btnText.style.opacity = '0';
-            if (btnSpinner) btnSpinner.classList.remove('hidden');
-        } else {
-            button.classList.remove('loading');
-            button.disabled = false;
-            if (btnText) btnText.style.opacity = '1';
-            if (btnSpinner) btnSpinner.classList.add('hidden');
-        }
-    }
-
     showNotification(message, type = 'info', duration = 3000) {
         if (this.notificationService) {
             this.notificationService.show(message, type, duration);
         } else {
             // Fallback notification
-            console.log(`[${type.toUpperCase()}] ${message}`);
+            this.showFallbackNotification(message, type, duration);
         }
+    }
+
+    showFallbackNotification(message, type, duration) {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+
+        const content = document.createElement('div');
+        content.className = 'notification-content';
+
+        const icon = document.createElement('i');
+        icon.className = `fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}`;
+
+        const text = document.createElement('span');
+        text.textContent = message;
+
+        content.appendChild(icon);
+        content.appendChild(text);
+        notification.appendChild(content);
+
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            animation: slideInRight 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            max-width: 400px;
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, duration);
     }
 
     showError(message) {
         this.showNotification(message, 'error');
     }
 
-    // Utility Methods
-    async checkAuthStatus() {
-        try {
-            const response = await this.auth.getStatus();
-            if (response.success && response.data.authenticated) {
-                this.user = response.data.user;
-                this.isAuthenticated = true;
-                this.showChatApp();
-                this.connectWebSocket();
-            } else {
-                this.showAuthPages();
-            }
-        } catch (error) {
-            console.error('Auth status check error:', error);
-            this.showAuthPages();
-        }
-    }
-
-    validateRegisterForm(data, form) {
-        let isValid = true;
-
-        // Username validation
-        if (data.username.length < 3 || data.username.length > 30) {
-            this.showFieldError(form, 'username', '用戶名必須在3-30個字符之間');
-            isValid = false;
-        }
-
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(data.email)) {
-            this.showFieldError(form, 'email', '請輸入有效的郵箱地址');
-            isValid = false;
-        }
-
-        // Password validation
-        if (data.password.length < 8) {
-            this.showFieldError(form, 'password', '密碼長度至少8個字符');
-            isValid = false;
-        }
-
-        // Confirm password
-        if (data.password !== data.confirmPassword) {
-            this.showFieldError(form, 'confirmPassword', '密碼確認不匹配');
-            isValid = false;
-        }
-
-        return isValid;
-    }
-
-    checkPasswordStrength(e) {
-        const password = e.target.value;
-        const strengthBar = document.querySelector('.strength-fill');
-        const strengthText = document.querySelector('.strength-text');
-        const requirements = document.querySelectorAll('.requirement');
-
-        let score = 0;
-        const checks = {
-            length: password.length >= 8,
-            lowercase: /[a-z]/.test(password),
-            uppercase: /[A-Z]/.test(password),
-            number: /\d/.test(password),
-            special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-        };
-
-        // Update requirement indicators
-        requirements.forEach(req => {
-            const requirement = req.dataset.requirement;
-            const icon = req.querySelector('i');
-
-            if (checks[requirement]) {
-                req.classList.add('met');
-                icon.className = 'fas fa-check';
-                score++;
-            } else {
-                req.classList.remove('met');
-                icon.className = 'fas fa-times';
-            }
-        });
-
-        // Update strength bar
-        if (strengthBar && strengthText) {
-            strengthBar.className = 'strength-fill';
-
-            if (score <= 2) {
-                strengthBar.classList.add('weak');
-                strengthText.textContent = '密碼強度：弱';
-            } else if (score === 3) {
-                strengthBar.classList.add('fair');
-                strengthText.textContent = '密碼強度：一般';
-            } else if (score === 4) {
-                strengthBar.classList.add('good');
-                strengthText.textContent = '密碼強度：良好';
-            } else {
-                strengthBar.classList.add('strong');
-                strengthText.textContent = '密碼強度：強';
-            }
-        }
-    }
-
-    async checkUsernameAvailability(username) {
-        if (username.length < 3) return;
-
-        try {
-            const response = await this.auth.checkUsernameAvailability(username);
-            const input = document.getElementById('register-username');
-            const form = input.closest('form');
-
-            if (response.success) {
-                if (response.data.available) {
-                    this.showFieldSuccess(form, 'username', '用戶名可用');
-                } else {
-                    this.showFieldError(form, 'username', '用戶名已被使用');
-                }
-            }
-        } catch (error) {
-            console.error('Username check error:', error);
-        }
-    }
-
-    async checkEmailAvailability(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) return;
-
-        try {
-            const response = await this.auth.checkEmailAvailability(email);
-            const input = document.getElementById('register-email');
-            const form = input.closest('form');
-
-            if (response.success) {
-                if (response.data.available) {
-                    this.showFieldSuccess(form, 'email', '郵箱可用');
-                } else {
-                    this.showFieldError(form, 'email', '郵箱已被註冊');
-                }
-            }
-        } catch (error) {
-            console.error('Email check error:', error);
-        }
-    }
-
-    togglePasswordVisibility(e) {
-        const button = e.target.closest('.password-toggle');
-        const input = button.parentElement.querySelector('input');
-        const icon = button.querySelector('i');
-
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.className = 'fas fa-eye-slash';
-            button.setAttribute('aria-label', '隱藏密碼');
-        } else {
-            input.type = 'password';
-            icon.className = 'fas fa-eye';
-            button.setAttribute('aria-label', '顯示密碼');
-        }
-    }
-
-    showFormError(form, message) {
-        let errorDiv = form.querySelector('.form-error-general');
-        if (!errorDiv) {
-            errorDiv = document.createElement('div');
-            errorDiv.className = 'form-error form-error-general show';
-            form.appendChild(errorDiv);
-        }
-        errorDiv.textContent = message;
-        errorDiv.classList.add('show');
-    }
-
-    showFieldError(form, fieldName, message) {
-        const field = form.querySelector(`[name="${fieldName}"]`);
-        if (!field) return;
-
-        field.classList.add('error');
-        const errorDiv = field.parentElement.querySelector('.form-error') ||
-            field.closest('.form-group').querySelector('.form-error');
-        if (errorDiv) {
-            errorDiv.textContent = message;
-            errorDiv.classList.add('show');
-        }
-    }
-
-    showFieldSuccess(form, fieldName, message) {
-        const field = form.querySelector(`[name="${fieldName}"]`);
-        if (!field) return;
-
-        field.classList.remove('error');
-        field.classList.add('success');
-        const successDiv = field.parentElement.querySelector('.form-success') ||
-            field.closest('.form-group').querySelector('.form-success');
-        if (successDiv) {
-            successDiv.textContent = message;
-            successDiv.classList.add('show');
-        }
-    }
-
-    clearFormErrors(form) {
-        form.querySelectorAll('.form-error').forEach(error => {
-            error.classList.remove('show');
-        });
-        form.querySelectorAll('.form-success').forEach(success => {
-            success.classList.remove('show');
-        });
-        form.querySelectorAll('input').forEach(input => {
-            input.classList.remove('error', 'success');
-        });
-    }
-
     // Theme Methods
     initializeTheme() {
-        const savedTheme = this.storage?.get('theme') || 'light';
+        const savedTheme = this.storage?.get('theme') || localStorage.getItem('theme') || 'light';
         this.setTheme(savedTheme);
     }
 
@@ -769,70 +382,40 @@ class EliteChatApp {
 
         if (this.storage) {
             this.storage.set('theme', theme);
+        } else {
+            localStorage.setItem('theme', theme);
+        }
+
+        // Update theme toggle icon
+        const themeIcon = document.querySelector('#theme-toggle-btn i');
+        if (themeIcon) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
         }
     }
 
     toggleTheme() {
-        const themes = ['light', 'dark', 'sepia', 'ocean', 'forest'];
+        const themes = ['light', 'dark'];
         const currentIndex = themes.indexOf(this.currentTheme);
         const nextIndex = (currentIndex + 1) % themes.length;
         this.setTheme(themes[nextIndex]);
+
+        const themeNames = { light: '淺色', dark: '深色' };
+        this.showNotification(`已切換到${themeNames[themes[nextIndex]]}主題`, 'success');
     }
 
-    // Message Handling
-    handleMessageInput(e) {
-        const content = e.target.textContent.trim();
-        this.updateSendButton();
-
-        // Send typing indicator
-        if (content && this.currentChat) {
-            this.sendTypingIndicator(true);
-        } else {
-            this.sendTypingIndicator(false);
-        }
+    // Mobile UI Methods
+    toggleMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar?.classList.toggle('open');
+        overlay?.classList.toggle('show');
     }
 
-    handleMessageKeydown(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            this.sendMessage();
-        }
-    }
-
-    handleMessagePaste(e) {
-        e.preventDefault();
-        const text = (e.originalEvent || e).clipboardData.getData('text/plain');
-        document.execCommand('insertText', false, text);
-    }
-
-    updateSendButton() {
-        const messageInput = document.getElementById('message-input');
-        const sendBtn = document.getElementById('send-btn');
-        const voiceBtn = document.getElementById('voice-btn');
-
-        const hasContent = messageInput.textContent.trim().length > 0;
-
-        if (sendBtn) {
-            sendBtn.disabled = !hasContent;
-        }
-
-        // Toggle between send and voice button
-        if (hasContent) {
-            sendBtn?.classList.remove('hidden');
-            voiceBtn?.classList.add('hidden');
-        } else {
-            sendBtn?.classList.add('hidden');
-            voiceBtn?.classList.remove('hidden');
-        }
-    }
-
-    sendTypingIndicator(isTyping) {
-        if (this.socket && this.currentChat) {
-            this.socket.emit('typing', {
-                chatId: this.currentChat.id,
-                isTyping
-            });
-        }
+    closeMobileSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('show');
     }
 
     // WebSocket Event Handlers
@@ -875,63 +458,6 @@ class EliteChatApp {
         this.showNotification('連接錯誤', 'error');
     }
 
-    // File Handling
-    handleFileSelect(e) {
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
-        files.forEach(file => {
-            this.addFileToUploadPreview(file);
-        });
-
-        // Clear input
-        e.target.value = '';
-    }
-
-    addFileToUploadPreview(file) {
-        const uploadPreview = document.getElementById('upload-preview');
-        const uploadItems = document.getElementById('upload-items');
-
-        if (!uploadPreview || !uploadItems) return;
-
-        const fileItem = document.createElement('div');
-        fileItem.className = 'upload-item';
-        fileItem.innerHTML = `
-            <div class="upload-item-preview">
-                ${file.type.startsWith('image/') ?
-            `<img src="${URL.createObjectURL(file)}" alt="預覽">` :
-            `<i class="fas fa-file"></i>`
-        }
-            </div>
-            <div class="upload-item-info">
-                <div class="upload-item-name">${file.name}</div>
-                <div class="upload-item-size">${this.formatFileSize(file.size)}</div>
-            </div>
-            <button type="button" class="upload-item-remove">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-
-        // Add remove handler
-        fileItem.querySelector('.upload-item-remove').addEventListener('click', () => {
-            fileItem.remove();
-            if (uploadItems.children.length === 0) {
-                uploadPreview.classList.add('hidden');
-            }
-        });
-
-        uploadItems.appendChild(fileItem);
-        uploadPreview.classList.remove('hidden');
-    }
-
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
     // Event Handlers
     handleBeforeUnload(e) {
         if (this.socket) {
@@ -952,142 +478,183 @@ class EliteChatApp {
 
     handleEscapeKey() {
         // Close modals, emoji picker, etc.
-        this.closeEmojiPicker();
         this.closeActiveModals();
-        this.cancelReply();
     }
 
-    // Placeholder methods for features to be implemented
-    async loadRecentChats() {
-        // TODO: Implement chat loading
-        console.log('Loading recent chats...');
-    }
-
-    async loadContacts() {
-        // TODO: Implement contacts loading
-        console.log('Loading contacts...');
-    }
-
-    async loadRooms() {
-        // TODO: Implement rooms loading
-        console.log('Loading rooms...');
-    }
-
-    displayMessage(message) {
-        // TODO: Implement message display
-        console.log('Displaying message:', message);
-    }
-
-    updateChatList(message) {
-        // TODO: Implement chat list update
-        console.log('Updating chat list:', message);
-    }
-
-    updateUserStatus(userId, status) {
-        // TODO: Implement user status update
-        console.log('User status update:', userId, status);
-    }
-
-    showTypingIndicator(user, isTyping) {
-        // TODO: Implement typing indicator
-        console.log('Typing indicator:', user, isTyping);
-    }
-
-    toggleEmojiPicker() {
-        // TODO: Implement emoji picker
-        console.log('Toggle emoji picker');
-    }
-
-    closeEmojiPicker() {
-        // TODO: Implement close emoji picker
-        console.log('Close emoji picker');
-    }
-
-    toggleVoiceRecording() {
-        // TODO: Implement voice recording
-        console.log('Toggle voice recording');
-    }
-
-    startVoiceCall() {
-        // TODO: Implement voice call
-        console.log('Start voice call');
-    }
-
-    startVideoCall() {
-        // TODO: Implement video call
-        console.log('Start video call');
-    }
-
-    showChatInfo() {
-        // TODO: Implement chat info modal
-        console.log('Show chat info');
-    }
-
-    showChatMenu() {
-        // TODO: Implement chat menu
-        console.log('Show chat menu');
-    }
-
+    // Search Handlers
     handleChatSearch(e) {
-        // TODO: Implement chat search
-        console.log('Chat search:', e.target.value);
+        const query = e.target.value.toLowerCase();
+        this.filterItems('chat-item', '.chat-name', query);
     }
 
     handleContactSearch(e) {
-        // TODO: Implement contact search
-        console.log('Contact search:', e.target.value);
+        const query = e.target.value.toLowerCase();
+        this.filterItems('contact-item', '.contact-name', query);
     }
 
     handleRoomSearch(e) {
-        // TODO: Implement room search
-        console.log('Room search:', e.target.value);
+        const query = e.target.value.toLowerCase();
+        this.filterItems('room-item', '.room-name', query);
+    }
+
+    filterItems(itemClass, nameSelector, query) {
+        const items = document.querySelectorAll(`.${itemClass}`);
+        items.forEach(item => {
+            const nameElement = item.querySelector(nameSelector);
+            if (nameElement) {
+                const name = nameElement.textContent.toLowerCase();
+                const shouldShow = name.includes(query);
+                item.style.display = shouldShow ? 'flex' : 'none';
+            }
+        });
     }
 
     handleStatusChange(e) {
-        // TODO: Implement status change
-        console.log('Status change:', e.target.value);
+        const newStatus = e.target.value;
+        // Update user status
+        if (this.user) {
+            this.user.status = newStatus;
+            localStorage.setItem('currentUser', JSON.stringify(this.user));
+
+            // Update status indicator
+            const statusIndicator = document.getElementById('user-status-indicator');
+            if (statusIndicator) {
+                statusIndicator.className = `status-indicator ${newStatus}`;
+            }
+
+            // Send status update via WebSocket
+            if (this.socket) {
+                this.socket.emit('status_change', { status: newStatus });
+            }
+        }
     }
 
+    // Modal Methods
     showNewChatModal() {
-        // TODO: Implement new chat modal
-        console.log('Show new chat modal');
+        this.showNotification('新聊天功能開發中...', 'info');
     }
 
     showAddContactModal() {
-        // TODO: Implement add contact modal
-        console.log('Show add contact modal');
+        this.showNotification('添加聯繫人功能開發中...', 'info');
     }
 
     showCreateRoomModal() {
-        // TODO: Implement create room modal
-        console.log('Show create room modal');
+        this.showNotification('創建房間功能開發中...', 'info');
     }
 
     showSettingsModal() {
-        // TODO: Implement settings modal
-        console.log('Show settings modal');
-    }
-
-    cancelReply() {
-        // TODO: Implement cancel reply
-        console.log('Cancel reply');
+        this.showNotification('設置功能開發中...', 'info');
     }
 
     closeActiveModals() {
-        // TODO: Implement close active modals
-        console.log('Close active modals');
+        // Close all active modals
+        const modals = document.querySelectorAll('.modal.active, .modal-open');
+        modals.forEach(modal => {
+            modal.classList.remove('active', 'modal-open');
+        });
     }
 
     focusSearch() {
-        // TODO: Implement focus search
-        console.log('Focus search');
+        const activeTab = document.querySelector('.nav-tab.active')?.dataset.tab;
+        const searchInput = document.getElementById(`${activeTab}-search`);
+        searchInput?.focus();
+    }
+
+    // Data Loading Methods (Placeholder implementations)
+    async loadRecentChats() {
+        console.log('Loading recent chats...');
+        // TODO: Implement chat loading from API
+    }
+
+    async loadContacts() {
+        console.log('Loading contacts...');
+        // TODO: Implement contacts loading from API
+    }
+
+    async loadRooms() {
+        console.log('Loading rooms...');
+        // TODO: Implement rooms loading from API
+    }
+
+    displayMessage(message) {
+        console.log('Displaying message:', message);
+        // TODO: Implement message display
+    }
+
+    updateChatList(message) {
+        console.log('Updating chat list:', message);
+        // TODO: Implement chat list update
+    }
+
+    updateUserStatus(userId, status) {
+        console.log('User status update:', userId, status);
+        // TODO: Implement user status update
+    }
+
+    showTypingIndicator(user, isTyping) {
+        console.log('Typing indicator:', user, isTyping);
+        // TODO: Implement typing indicator
+    }
+
+    // Cleanup method
+    destroy() {
+        // Clean up WebSocket connection
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+
+        // Remove event listeners
+        document.removeEventListener('keydown', this.bindKeyboardShortcuts);
+        window.removeEventListener('beforeunload', this.handleBeforeUnload);
+        window.removeEventListener('online', this.handleOnline);
+        window.removeEventListener('offline', this.handleOffline);
+
+        console.log('Elite Chat App destroyed');
     }
 }
 
-// Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.eliteChatApp = new EliteChatApp();
-});
+// Add CSS animations for notifications
+if (!document.getElementById('notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Initialize app when DOM is loaded (only on chat page)
+if (window.location.pathname.includes('chat.html')) {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.eliteChatApp = new EliteChatApp();
+    });
+}
 
 // Export for global access
 window.EliteChatApp = EliteChatApp;

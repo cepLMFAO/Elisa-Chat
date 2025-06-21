@@ -1,4 +1,3 @@
-
 export const APP_CONFIG = {
     name: 'Elite Chat',
     version: '1.0.0',

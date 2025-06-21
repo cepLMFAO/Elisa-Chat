@@ -1,4 +1,3 @@
-
 class StorageService {
     constructor(options = {}) {
         this.options = {

@@ -558,243 +558,7 @@
             font-size: var(--font-size-sm);
         }
 
-        /* Chat Application Layout */
-        .chat-app {
-            display: flex;
-            width: 100%;
-            height: 100vh;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background-color: var(--bg-secondary);
-            border-right: 1px solid var(--border-light);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        /* User Profile Section */
-        .user-profile {
-            padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            background-color: var(--white);
-        }
-
-        .user-avatar-container {
-            position: relative;
-        }
-
-        .user-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--radius-full);
-            object-fit: cover;
-        }
-
-        .status-indicator {
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            width: 16px;
-            height: 16px;
-            border-radius: var(--radius-full);
-            border: 3px solid var(--white);
-        }
-
-        .status-indicator.online {
-            background-color: var(--success-color);
-        }
-
-        .status-indicator.away {
-            background-color: var(--warning-color);
-        }
-
-        .status-indicator.busy {
-            background-color: var(--error-color);
-        }
-
-        .status-indicator.invisible {
-            background-color: var(--gray-400);
-        }
-
-        .user-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .user-name {
-            margin: 0 0 var(--spacing-xs) 0;
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .status-select {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            cursor: pointer;
-            padding: 0;
-        }
-
-        .user-actions {
-            display: flex;
-            gap: var(--spacing-xs);
-        }
-
-        /* Sidebar Navigation */
-        .sidebar-nav {
-            display: flex;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .nav-tab {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-            padding: var(--spacing-md);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-            font-weight: 500;
-            transition: var(--transition-fast);
-            position: relative;
-        }
-
-        .nav-tab:hover {
-            background-color: var(--gray-50);
-            color: var(--text-primary);
-        }
-
-        .nav-tab.active {
-            color: var(--primary-color);
-            background-color: var(--gray-50);
-        }
-
-        .nav-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: var(--primary-color);
-        }
-
-        .unread-badge {
-            background-color: var(--error-color);
-            color: var(--white);
-            font-size: var(--font-size-xs);
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: var(--radius-full);
-            min-width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: auto;
-        }
-
-        /* Tab Content */
-        .tab-content {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tab-pane {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .tab-pane.active {
-            display: flex;
-        }
-
-        .tab-header {
-            padding: var(--spacing-lg);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .tab-header h3 {
-            margin: 0;
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        /* Search Container */
-        .search-container {
-            padding: var(--spacing-md) var(--spacing-lg);
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-light);
-            position: relative;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 40px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            font-size: var(--font-size-sm);
-            background-color: var(--bg-secondary);
-        }
-
-        .search-container input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background-color: var(--white);
-        }
-
-        .search-container i {
-            position: absolute;
-            left: calc(var(--spacing-lg) + var(--spacing-md));
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-tertiary);
-            pointer-events: none;
-        }
-
-        /* Lists */
-        .chat-list,
-        .contact-list,
-        .room-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-sm) 0;
-        }
-
-        /* Chat Main Area */
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-primary);
-            overflow: hidden;
-        }
-
-        /* Welcome Screen */
+        /* Welcome Content */
         .welcome-screen {
             flex: 1;
             display: flex;
@@ -848,23 +612,6 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: fixed;
-                top: 0;
-                left: -100%;
-                z-index: var(--z-fixed);
-                transition: left var(--transition-normal);
-            }
-
-            .sidebar.open {
-                left: 0;
-            }
-
-            .chat-main {
-                width: 100%;
-            }
-
             .auth-container {
                 padding: var(--spacing-lg);
             }
@@ -899,6 +646,80 @@
     <div id="auth-pages" class="auth-pages">
         <!-- Login Page -->
         <div id="login-page" class="auth-page active">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <div class="logo">
+                        <i class="fas fa-comments"></i>
+                        <span>Elite Chat</span>
+                    </div>
+                    <h1>歡迎回來</h1>
+                    <p>登錄您的帳戶以開始聊天</p>
+                </div>
+
+                <form id="login-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-identifier">
+                            <i class="fas fa-user"></i>
+                            用戶名或郵箱
+                        </label>
+                        <input type="text" id="login-identifier" name="identifier" required
+                               placeholder="輸入用戶名或郵箱" autocomplete="username">
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="login-password">
+                            <i class="fas fa-lock"></i>
+                            密碼
+                        </label>
+                        <div class="password-input">
+                            <input type="password" id="login-password" name="password" required
+                                   placeholder="輸入密碼" autocomplete="current-password">
+                            <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <!-- Two Factor Authentication Field (Hidden by default) -->
+                    <div id="two-factor-group" class="form-group hidden">
+                        <label for="two-factor-token">
+                            <i class="fas fa-shield-alt"></i>
+                            雙因素認證碼
+                        </label>
+                        <input type="text" id="two-factor-token" name="twoFactorToken"
+                               placeholder="輸入6位數驗證碼" maxlength="6" pattern="[0-9]{6}">
+                        <div class="form-help">請輸入您的驗證應用程式中的6位數代碼</div>
+                        <div class="form-error"></div>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="remember-me" name="rememberMe">
+                            <span class="checkmark"></span>
+                            記住我
+                        </label>
+                        <a href="#" id="forgot-password-link" class="link">忘記密碼？</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-loading" id="login-btn">
+                        <span class="btn-text">登錄</span>
+                        <span class="btn-spinner hidden">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </span>
+                    </button>
+
+                    <div class="auth-switch">
+                        <span>還沒有帳戶？</span>
+                        <a href="#" id="show-register" class="link">立即註冊</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="register-page" class="auth-page">
             <div class="auth-container">
                 <div class="auth-header">
                     <div class="logo">
@@ -1029,224 +850,36 @@
         </div>
     </div>
 
-    <!-- Main Chat Application -->
-    <div id="chat-app" class="chat-app hidden">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <!-- User Profile Section -->
-            <div class="user-profile">
-                <div class="user-avatar-container">
-                    <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=demo" alt="用戶頭像" class="user-avatar">
-                    <div class="status-indicator online"></div>
-                </div>
-                <div class="user-info">
-                    <h3 id="user-name" class="user-name">演示用戶</h3>
-                    <div class="user-status">
-                        <select id="user-status-select" class="status-select">
-                            <option value="online">在線</option>
-                            <option value="away">離開</option>
-                            <option value="busy">忙碌</option>
-                            <option value="invisible">隱身</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="user-actions">
-                    <button class="btn-icon" id="settings-btn" title="設置">
-                        <i class="fas fa-cog"></i>
-                    </button>
-                    <button class="btn-icon" id="logout-btn" title="登出">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
+    <!-- Welcome Screen (When no authentication needed) -->
+    <div id="welcome-screen" class="welcome-screen hidden">
+        <div class="welcome-content">
+            <div class="welcome-icon">
+                <i class="fas fa-comments"></i>
             </div>
-
-            <!-- Navigation Tabs -->
-            <nav class="sidebar-nav">
-                <button class="nav-tab active" data-tab="chats">
-                    <i class="fas fa-comments"></i>
-                    <span>聊天</span>
-                    <div class="unread-badge hidden" id="chats-badge">0</div>
+            <h2>歡迎使用 Elite Chat</h2>
+            <p>企業級即時聊天應用程式</p>
+            <div class="welcome-actions">
+                <button class="btn btn-primary" id="get-started-btn">
+                    <i class="fas fa-rocket"></i>
+                    開始使用
                 </button>
-                <button class="nav-tab" data-tab="contacts">
-                    <i class="fas fa-users"></i>
-                    <span>聯繫人</span>
-                    <div class="unread-badge hidden" id="contacts-badge">0</div>
-                </button>
-                <button class="nav-tab" data-tab="rooms">
-                    <i class="fas fa-hashtag"></i>
-                    <span>房間</span>
-                    <div class="unread-badge hidden" id="rooms-badge">0</div>
-                </button>
-            </nav>
-
-            <!-- Tab Contents -->
-            <div class="tab-content">
-                <!-- Chats Tab -->
-                <div id="chats-tab" class="tab-pane active">
-                    <div class="tab-header">
-                        <h3>最近聊天</h3>
-                        <button class="btn-icon" id="new-chat-btn" title="新建聊天">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                    <div class="search-container">
-                        <input type="text" id="chat-search" placeholder="搜索聊天...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div id="chat-list" class="chat-list">
-                        <!-- Demo chat items -->
-                        <div class="chat-item">
-                            <div class="item-avatar-container">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=alice" alt="Alice" class="item-avatar">
-                                <div class="status-indicator online"></div>
-                            </div>
-                            <div class="item-info">
-                                <div class="item-header">
-                                    <div class="chat-name">Alice Johnson</div>
-                                    <div class="chat-time">10:30</div>
-                                </div>
-                                <div class="chat-meta">
-                                    <div class="chat-message">你好！最近怎麼樣？</div>
-                                    <div class="unread-count">2</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chat-item">
-                            <div class="item-avatar-container">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=bob" alt="Bob" class="item-avatar">
-                                <div class="status-indicator away"></div>
-                            </div>
-                            <div class="item-info">
-                                <div class="item-header">
-                                    <div class="chat-name">Bob Smith</div>
-                                    <div class="chat-time">昨天</div>
-                                </div>
-                                <div class="chat-meta">
-                                    <div class="chat-message">明天見面聊</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contacts Tab -->
-                <div id="contacts-tab" class="tab-pane">
-                    <div class="tab-header">
-                        <h3>聯繫人</h3>
-                        <button class="btn-icon" id="add-contact-btn" title="添加聯繫人">
-                            <i class="fas fa-user-plus"></i>
-                        </button>
-                    </div>
-                    <div class="search-container">
-                        <input type="text" id="contact-search" placeholder="搜索聯繫人...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div id="contact-list" class="contact-list">
-                        <!-- Demo contact items -->
-                        <div class="contact-item">
-                            <div class="item-avatar-container">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=charlie" alt="Charlie" class="item-avatar">
-                                <div class="status-indicator online"></div>
-                            </div>
-                            <div class="item-info">
-                                <div class="contact-name">Charlie Brown</div>
-                                <div class="contact-status">在線</div>
-                            </div>
-                        </div>
-                        <div class="contact-item">
-                            <div class="item-avatar-container">
-                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=diana" alt="Diana" class="item-avatar">
-                                <div class="status-indicator busy"></div>
-                            </div>
-                            <div class="item-info">
-                                <div class="contact-name">Diana Wilson</div>
-                                <div class="contact-status">忙碌</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Rooms Tab -->
-                <div id="rooms-tab" class="tab-pane">
-                    <div class="tab-header">
-                        <h3>聊天室</h3>
-                        <button class="btn-icon" id="create-room-btn" title="創建房間">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                    <div class="search-container">
-                        <input type="text" id="room-search" placeholder="搜索房間...">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <div id="room-list" class="room-list">
-                        <!-- Demo room items -->
-                        <div class="room-item">
-                            <div class="item-avatar-container">
-                                <div class="item-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                    開
-                                </div>
-                            </div>
-                            <div class="item-info">
-                                <div class="room-name">開發討論</div>
-                                <div class="room-description">15 成員 · 3 在線</div>
-                            </div>
-                        </div>
-                        <div class="room-item">
-                            <div class="item-avatar-container">
-                                <div class="item-avatar" style="background: linear-gradient(135deg, #f093fb, #f5576c); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                    設
-                                </div>
-                            </div>
-                            <div class="item-info">
-                                <div class="room-name">設計團隊</div>
-                                <div class="room-description">8 成員 · 2 在線</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
-        </aside>
-
-        <!-- Main Chat Area -->
-        <main class="chat-main">
-            <!-- Welcome Screen -->
-            <div id="welcome-screen" class="welcome-screen">
-                <div class="welcome-content">
-                    <div class="welcome-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <h2>歡迎使用 Elite Chat</h2>
-                    <p>選擇一個聊天或聯繫人開始對話</p>
-                    <div class="welcome-actions">
-                        <button class="btn btn-primary" id="start-new-chat">
-                            <i class="fas fa-plus"></i>
-                            開始新聊天
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Interface (Hidden by default) -->
-            <div id="chat-interface" class="chat-interface hidden">
-                <!-- This would be populated when a chat is selected -->
-            </div>
-        </main>
+        </div>
     </div>
 </div>
 
-<!-- JavaScript for Basic Functionality -->
+<!-- JavaScript for Authentication -->
 <script>
-    // Simple demo functionality
-    class EliteChatDemo {
+    class EliteChatAuth {
         constructor() {
             this.currentPage = 'login';
-            this.isAuthenticated = false;
             this.init();
         }
 
         init() {
             this.hideLoading();
             this.bindEvents();
+            this.checkExistingAuth();
         }
 
         hideLoading() {
@@ -1254,6 +887,18 @@
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('app').classList.remove('hidden');
             }, 1500);
+        }
+
+        checkExistingAuth() {
+            // Check if user is already authenticated
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            if (isAuthenticated === 'true') {
+                this.redirectToChat();
+            }
+        }
+
+        redirectToChat() {
+            window.location.href = 'chat.html';
         }
 
         bindEvents() {
@@ -1299,36 +944,11 @@
                 this.handleForgotPassword();
             });
 
-            // Logout
-            document.getElementById('logout-btn')?.addEventListener('click', () => {
-                this.handleLogout();
-            });
-
-            // Tab switching
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    this.switchTab(e.target.closest('.nav-tab').dataset.tab);
-                });
-            });
-
-            // Demo chat functionality
-            document.getElementById('start-new-chat')?.addEventListener('click', () => {
-                alert('新聊天功能開發中...');
-            });
-
-            // Chat item clicks
-            document.querySelectorAll('.chat-item, .contact-item, .room-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    // Remove active class from all items
-                    document.querySelectorAll('.chat-item, .contact-item, .room-item').forEach(i => {
-                        i.classList.remove('active');
-                    });
-                    // Add active class to clicked item
-                    item.classList.add('active');
-
-                    // Show a demo message
-                    alert('聊天功能開發中，敬請期待！');
-                });
+            // Get started button
+            document.getElementById('get-started-btn')?.addEventListener('click', () => {
+                this.showPage('login');
+                document.getElementById('auth-pages').classList.remove('hidden');
+                document.getElementById('welcome-screen').classList.add('hidden');
             });
         }
 
@@ -1354,72 +974,224 @@
             }
         }
 
-        handleLogin() {
+        async handleLogin() {
+            const form = document.getElementById('login-form');
             const btn = document.getElementById('login-btn');
-            this.setLoading(btn, true);
+            const formData = new FormData(form);
 
-            // Simulate login process
-            setTimeout(() => {
+            const loginData = {
+                identifier: formData.get('identifier'),
+                password: formData.get('password'),
+                twoFactorToken: formData.get('twoFactorToken') || undefined
+            };
+
+            if (!this.validateLoginData(loginData, form)) return;
+
+            try {
+                this.setLoading(btn, true);
+                this.clearFormErrors(form);
+
+                // Here you would typically make an API call
+                // For now, we'll simulate the authentication
+                const response = await this.simulateAuth(loginData, 'login');
+
+                if (response.success) {
+                    this.showNotification('登錄成功！', 'success');
+                    localStorage.setItem('isAuthenticated', 'true');
+                    localStorage.setItem('currentUser', JSON.stringify(response.user));
+
+                    setTimeout(() => {
+                        this.redirectToChat();
+                    }, 1000);
+                } else {
+                    if (response.code === 'TWO_FACTOR_REQUIRED') {
+                        this.show2FAInput();
+                    } else {
+                        this.showFormError(form, response.error);
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                this.showFormError(form, '登錄失敗，請稍後重試');
+            } finally {
                 this.setLoading(btn, false);
-                this.showNotification('登錄成功！', 'success');
-                this.showChatApp();
-            }, 2000);
+            }
         }
 
-        handleRegister() {
+        async handleRegister() {
+            const form = document.getElementById('register-form');
             const btn = document.getElementById('register-btn');
-            this.setLoading(btn, true);
+            const formData = new FormData(form);
 
-            // Simulate registration process
-            setTimeout(() => {
+            const registerData = {
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                confirmPassword: formData.get('confirmPassword'),
+                agreeTerms: formData.get('agreeTerms')
+            };
+
+            if (!this.validateRegisterData(registerData, form)) return;
+
+            try {
+                this.setLoading(btn, true);
+                this.clearFormErrors(form);
+
+                const response = await this.simulateAuth(registerData, 'register');
+
+                if (response.success) {
+                    this.showNotification('註冊成功！歡迎加入 Elite Chat', 'success');
+                    localStorage.setItem('isAuthenticated', 'true');
+                    localStorage.setItem('currentUser', JSON.stringify(response.user));
+
+                    setTimeout(() => {
+                        this.redirectToChat();
+                    }, 1000);
+                } else {
+                    this.showFormError(form, response.error);
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                this.showFormError(form, '註冊失敗，請稍後重試');
+            } finally {
                 this.setLoading(btn, false);
-                this.showNotification('註冊成功！歡迎加入 Elite Chat', 'success');
-                this.showChatApp();
-            }, 2000);
+            }
         }
 
-        handleForgotPassword() {
+        async handleForgotPassword() {
+            const form = document.getElementById('forgot-password-form');
             const btn = document.getElementById('forgot-btn');
-            this.setLoading(btn, true);
+            const formData = new FormData(form);
 
-            // Simulate forgot password process
-            setTimeout(() => {
-                this.setLoading(btn, false);
+            const email = formData.get('email');
+
+            if (!this.validateEmail(email)) {
+                this.showFieldError(form, 'email', '請輸入有效的郵箱地址');
+                return;
+            }
+
+            try {
+                this.setLoading(btn, true);
+                this.clearFormErrors(form);
+
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
                 this.showNotification('重置鏈接已發送到您的郵箱', 'success');
-                document.getElementById('forgot-password-form').reset();
-            }, 2000);
+                form.reset();
+            } catch (error) {
+                console.error('Forgot password error:', error);
+                this.showFormError(form, '發送失敗，請稍後重試');
+            } finally {
+                this.setLoading(btn, false);
+            }
         }
 
-        handleLogout() {
-            this.showNotification('已成功登出', 'success');
-            this.showAuthPages();
+        async simulateAuth(data, type) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            if (type === 'login') {
+                // Simulate login validation
+                if (!data.identifier || !data.password) {
+                    return { success: false, error: '請填寫所有必需字段' };
+                }
+
+                // Create user object
+                const user = {
+                    id: Date.now().toString(),
+                    username: data.identifier.includes('@') ? data.identifier.split('@')[0] : data.identifier,
+                    email: data.identifier.includes('@') ? data.identifier : `${data.identifier}@example.com`,
+                    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.identifier}`,
+                    status: 'online'
+                };
+
+                return { success: true, user };
+            } else if (type === 'register') {
+                // Simulate registration validation
+                if (!data.username || !data.email || !data.password) {
+                    return { success: false, error: '請填寫所有必需字段' };
+                }
+
+                if (!data.agreeTerms) {
+                    return { success: false, error: '請同意服務條款和隱私政策' };
+                }
+
+                const user = {
+                    id: Date.now().toString(),
+                    username: data.username,
+                    email: data.email,
+                    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`,
+                    status: 'online'
+                };
+
+                return { success: true, user };
+            }
         }
 
-        showChatApp() {
-            document.getElementById('auth-pages').classList.add('hidden');
-            document.getElementById('chat-app').classList.remove('hidden');
-            this.isAuthenticated = true;
+        validateLoginData(data, form) {
+            let isValid = true;
+
+            if (!data.identifier || data.identifier.trim().length < 3) {
+                this.showFieldError(form, 'identifier', '請輸入用戶名或郵箱');
+                isValid = false;
+            }
+
+            if (!data.password || data.password.length < 6) {
+                this.showFieldError(form, 'password', '密碼長度至少6個字符');
+                isValid = false;
+            }
+
+            return isValid;
         }
 
-        showAuthPages() {
-            document.getElementById('auth-pages').classList.remove('hidden');
-            document.getElementById('chat-app').classList.add('hidden');
-            this.isAuthenticated = false;
-            this.showPage('login');
+        validateRegisterData(data, form) {
+            let isValid = true;
+
+            // Username validation
+            if (!data.username || data.username.length < 3 || data.username.length > 30) {
+                this.showFieldError(form, 'username', '用戶名必須在3-30個字符之間');
+                isValid = false;
+            }
+
+            // Email validation
+            if (!this.validateEmail(data.email)) {
+                this.showFieldError(form, 'email', '請輸入有效的郵箱地址');
+                isValid = false;
+            }
+
+            // Password validation
+            if (!data.password || data.password.length < 8) {
+                this.showFieldError(form, 'password', '密碼長度至少8個字符');
+                isValid = false;
+            }
+
+            // Confirm password
+            if (data.password !== data.confirmPassword) {
+                this.showFieldError(form, 'confirmPassword', '密碼確認不匹配');
+                isValid = false;
+            }
+
+            // Terms agreement
+            if (!data.agreeTerms) {
+                this.showFieldError(form, 'agreeTerms', '請同意服務條款和隱私政策');
+                isValid = false;
+            }
+
+            return isValid;
         }
 
-        switchTab(tabName) {
-            // Update active tab
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+        validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
 
-            // Show corresponding content
-            document.querySelectorAll('.tab-pane').forEach(pane => {
-                pane.classList.remove('active');
-            });
-            document.getElementById(`${tabName}-tab`)?.classList.add('active');
+        show2FAInput() {
+            const twoFactorGroup = document.getElementById('two-factor-group');
+            if (twoFactorGroup) {
+                twoFactorGroup.classList.remove('hidden');
+                document.getElementById('two-factor-token')?.focus();
+            }
         }
 
         setLoading(button, loading) {
@@ -1430,12 +1202,12 @@
 
             if (loading) {
                 button.disabled = true;
-                btnText.style.opacity = '0';
-                btnSpinner.classList.remove('hidden');
+                if (btnText) btnText.style.opacity = '0';
+                if (btnSpinner) btnSpinner.classList.remove('hidden');
             } else {
                 button.disabled = false;
-                btnText.style.opacity = '1';
-                btnSpinner.classList.add('hidden');
+                if (btnText) btnText.style.opacity = '1';
+                if (btnSpinner) btnSpinner.classList.add('hidden');
             }
         }
 
@@ -1449,7 +1221,6 @@
                 </div>
             `;
 
-            // Add notification styles
             notification.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -1466,17 +1237,48 @@
                 gap: 8px;
                 font-size: 14px;
                 font-weight: 500;
+                max-width: 400px;
             `;
 
             document.body.appendChild(notification);
 
-            // Remove notification after 3 seconds
             setTimeout(() => {
                 notification.style.animation = 'slideOutRight 0.3s ease-out';
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
+                setTimeout(() => notification.remove(), 300);
             }, 3000);
+        }
+
+        showFormError(form, message) {
+            let errorDiv = form.querySelector('.form-error-general');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'form-error form-error-general show';
+                form.appendChild(errorDiv);
+            }
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        showFieldError(form, fieldName, message) {
+            const field = form.querySelector(`[name="${fieldName}"]`);
+            if (!field) return;
+
+            field.classList.add('error');
+            const errorDiv = field.parentElement.querySelector('.form-error') ||
+                field.closest('.form-group').querySelector('.form-error');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+        }
+
+        clearFormErrors(form) {
+            form.querySelectorAll('.form-error').forEach(error => {
+                error.classList.remove('show');
+            });
+            form.querySelectorAll('input').forEach(input => {
+                input.classList.remove('error', 'success');
+            });
         }
     }
 
@@ -1513,84 +1315,10 @@
     `;
     document.head.appendChild(style);
 
-    // Initialize the demo app
+    // Initialize the auth app
     document.addEventListener('DOMContentLoaded', () => {
-        new EliteChatDemo();
+        new EliteChatAuth();
     });
 </script>
 </body>
 </html>
-<span>Elite Chat</span>
-</div>
-<h1>歡迎回來</h1>
-<p>登錄您的帳戶以開始聊天</p>
-</div>
-
-<form id="login-form" class="auth-form">
-    <div class="form-group">
-        <label for="login-identifier">
-            <i class="fas fa-user"></i>
-            用戶名或郵箱
-        </label>
-        <input type="text" id="login-identifier" name="identifier" required
-               placeholder="輸入用戶名或郵箱" autocomplete="username">
-        <div class="form-error"></div>
-    </div>
-
-    <div class="form-group">
-        <label for="login-password">
-            <i class="fas fa-lock"></i>
-            密碼
-        </label>
-        <div class="password-input">
-            <input type="password" id="login-password" name="password" required
-                   placeholder="輸入密碼" autocomplete="current-password">
-            <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
-                <i class="fas fa-eye"></i>
-            </button>
-        </div>
-        <div class="form-error"></div>
-    </div>
-
-    <!-- Two Factor Authentication Field (Hidden by default) -->
-    <div id="two-factor-group" class="form-group hidden">
-        <label for="two-factor-token">
-            <i class="fas fa-shield-alt"></i>
-            雙因素認證碼
-        </label>
-        <input type="text" id="two-factor-token" name="twoFactorToken"
-               placeholder="輸入6位數驗證碼" maxlength="6" pattern="[0-9]{6}">
-        <div class="form-help">請輸入您的驗證應用程式中的6位數代碼</div>
-        <div class="form-error"></div>
-    </div>
-
-    <div class="form-options">
-        <label class="checkbox-container">
-            <input type="checkbox" id="remember-me" name="rememberMe">
-            <span class="checkmark"></span>
-            記住我
-        </label>
-        <a href="#" id="forgot-password-link" class="link">忘記密碼？</a>
-    </div>
-
-    <button type="submit" class="btn btn-primary btn-loading" id="login-btn">
-        <span class="btn-text">登錄</span>
-        <span class="btn-spinner hidden">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </span>
-    </button>
-
-    <div class="auth-switch">
-        <span>還沒有帳戶？</span>
-        <a href="#" id="show-register" class="link">立即註冊</a>
-    </div>
-</form>
-</div>
-</div>
-
-<!-- Register Page -->
-<div id="register-page" class="auth-page">
-    <div class="auth-container">
-        <div class="auth-header">
-            <div class="logo">
-                <i class="fas fa-comments"></i>

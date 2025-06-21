@@ -20,6 +20,476 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS Variables */
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary-color: #764ba2;
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-light: #e5e7eb;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --radius-sm: 0.25rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --radius-full: 9999px;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
+            --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
+            --font-size-2xl: 1.5rem;
+            --transition-fast: 150ms ease-in-out;
+            --sidebar-width: 320px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: var(--font-size-base);
+            line-height: 1.5;
+            color: var(--text-primary);
+            background-color: var(--white);
+            overflow: hidden;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-md);
+            background: var(--white);
+            border-bottom: 1px solid var(--border-light);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: var(--spacing-sm);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: var(--font-size-lg);
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        /* Chat App Layout */
+        .chat-app {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--gray-50);
+            border-right: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+
+        /* User Profile Section */
+        .user-profile {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            background-color: var(--white);
+        }
+
+        .user-avatar-container {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            border-radius: var(--radius-full);
+            border: 3px solid var(--white);
+        }
+
+        .status-indicator.online { background-color: var(--success-color); }
+        .status-indicator.away { background-color: var(--warning-color); }
+        .status-indicator.busy { background-color: var(--error-color); }
+        .status-indicator.invisible { background-color: var(--gray-400); }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            margin: 0 0 var(--spacing-xs) 0;
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-select {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+        }
+
+        .btn-icon:hover {
+            background-color: var(--gray-100);
+            color: var(--text-primary);
+        }
+
+        /* Sidebar Navigation */
+        .sidebar-nav {
+            display: flex;
+            background-color: var(--white);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .nav-tab {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-md);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            background-color: var(--gray-50);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            color: var(--primary-color);
+            background-color: var(--gray-50);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+        }
+
+        .unread-badge {
+            background-color: var(--error-color);
+            color: var(--white);
+            font-size: var(--font-size-xs);
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .tab-pane.active {
+            display: flex;
+        }
+
+        .tab-header {
+            padding: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--white);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .tab-header h3 {
+            margin: 0;
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Search Container */
+        .search-container {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background-color: var(--white);
+            border-bottom: 1px solid var(--border-light);
+            position: relative;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 40px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            font-size: var(--font-size-sm);
+            background-color: var(--gray-50);
+        }
+
+        .search-container input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: var(--white);
+        }
+
+        .search-container i {
+            position: absolute;
+            left: calc(var(--spacing-lg) + var(--spacing-md));
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        /* Lists */
+        .chat-list, .contact-list, .room-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--spacing-sm) 0;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            text-align: center;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        /* Chat Main */
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--white);
+            overflow: hidden;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+        }
+
+        .welcome-content {
+            text-align: center;
+            max-width: 400px;
+            padding: var(--spacing-2xl);
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xl);
+            opacity: 0.8;
+        }
+
+        .welcome-content h2 {
+            margin: 0 0 var(--spacing-md) 0;
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .welcome-content p {
+            margin: 0 0 var(--spacing-xl) 0;
+            color: var(--text-secondary);
+            font-size: var(--font-size-lg);
+        }
+
+        .welcome-actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .mobile-header {
+                display: flex;
+            }
+
+            .chat-app {
+                padding-top: 60px;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: fixed;
+                top: 60px;
+                left: -100%;
+                z-index: 200;
+                transition: left var(--transition-fast);
+                height: calc(100vh - 60px);
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .chat-main {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body class="theme-light">
 
@@ -47,11 +517,11 @@
         <!-- User Profile Section -->
         <div class="user-profile">
             <div class="user-avatar-container">
-                <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=demo" alt="用戶頭像" class="user-avatar">
+                <img id="user-avatar" src="" alt="用戶頭像" class="user-avatar">
                 <div class="status-indicator online" id="user-status-indicator"></div>
             </div>
             <div class="user-info">
-                <h3 id="user-name" class="user-name">演示用戶</h3>
+                <h3 id="user-name" class="user-name">載入中...</h3>
                 <select id="user-status-select" class="status-select">
                     <option value="online">在線</option>
                     <option value="away">離開</option>
@@ -106,52 +576,10 @@
                     <i class="fas fa-search"></i>
                 </div>
                 <div id="chat-list" class="chat-list">
-                    <!-- Demo chat items -->
-                    <div class="chat-item" data-chat-id="1">
-                        <div class="item-avatar-container">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=alice" alt="Alice" class="item-avatar">
-                            <div class="status-indicator online"></div>
-                        </div>
-                        <div class="item-info">
-                            <div class="item-header">
-                                <div class="chat-name">Alice Johnson</div>
-                                <div class="chat-time">10:30</div>
-                            </div>
-                            <div class="chat-meta">
-                                <div class="chat-message">你好！最近怎麼樣？</div>
-                                <div class="unread-count">2</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-item" data-chat-id="2">
-                        <div class="item-avatar-container">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=bob" alt="Bob" class="item-avatar">
-                            <div class="status-indicator away"></div>
-                        </div>
-                        <div class="item-info">
-                            <div class="item-header">
-                                <div class="chat-name">Bob Smith</div>
-                                <div class="chat-time">昨天</div>
-                            </div>
-                            <div class="chat-meta">
-                                <div class="chat-message">明天見面聊</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-item" data-chat-id="3">
-                        <div class="item-avatar-container">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=carol" alt="Carol" class="item-avatar">
-                            <div class="status-indicator busy"></div>
-                        </div>
-                        <div class="item-info">
-                            <div class="item-header">
-                                <div class="chat-name">Carol White</div>
-                                <div class="chat-time">2天前</div>
-                            </div>
-                            <div class="chat-meta">
-                                <div class="chat-message">好的，謝謝你的幫助！</div>
-                            </div>
-                        </div>
+                    <div class="empty-state">
+                        <i class="fas fa-comments"></i>
+                        <p>暫無聊天記錄</p>
+                        <small>開始新的對話吧！</small>
                     </div>
                 </div>
             </div>
@@ -169,36 +597,10 @@
                     <i class="fas fa-search"></i>
                 </div>
                 <div id="contact-list" class="contact-list">
-                    <!-- Demo contact items -->
-                    <div class="contact-item" data-contact-id="1">
-                        <div class="item-avatar-container">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=charlie" alt="Charlie" class="item-avatar">
-                            <div class="status-indicator online"></div>
-                        </div>
-                        <div class="item-info">
-                            <div class="contact-name">Charlie Brown</div>
-                            <div class="contact-status">在線</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-contact-id="2">
-                        <div class="item-avatar-container">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=diana" alt="Diana" class="item-avatar">
-                            <div class="status-indicator busy"></div>
-                        </div>
-                        <div class="item-info">
-                            <div class="contact-name">Diana Wilson</div>
-                            <div class="contact-status">忙碌</div>
-                        </div>
-                    </div>
-                    <div class="contact-item" data-contact-id="3">
-                        <div class="item-avatar-container">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=eve" alt="Eve" class="item-avatar">
-                            <div class="status-indicator away"></div>
-                        </div>
-                        <div class="item-info">
-                            <div class="contact-name">Eve Davis</div>
-                            <div class="contact-status">離開</div>
-                        </div>
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>暫無聯繫人</p>
+                        <small>添加好友開始聊天</small>
                     </div>
                 </div>
             </div>
@@ -216,39 +618,10 @@
                     <i class="fas fa-search"></i>
                 </div>
                 <div id="room-list" class="room-list">
-                    <!-- Demo room items -->
-                    <div class="room-item" data-room-id="1">
-                        <div class="item-avatar-container">
-                            <div class="item-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                開
-                            </div>
-                        </div>
-                        <div class="item-info">
-                            <div class="room-name">開發討論</div>
-                            <div class="room-description">15 成員 · 3 在線</div>
-                        </div>
-                    </div>
-                    <div class="room-item" data-room-id="2">
-                        <div class="item-avatar-container">
-                            <div class="item-avatar" style="background: linear-gradient(135deg, #f093fb, #f5576c); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                設
-                            </div>
-                        </div>
-                        <div class="item-info">
-                            <div class="room-name">設計團隊</div>
-                            <div class="room-description">8 成員 · 2 在線</div>
-                        </div>
-                    </div>
-                    <div class="room-item" data-room-id="3">
-                        <div class="item-avatar-container">
-                            <div class="item-avatar" style="background: linear-gradient(135deg, #4ecdc4, #44a08d); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                項
-                            </div>
-                        </div>
-                        <div class="item-info">
-                            <div class="room-name">項目管理</div>
-                            <div class="room-description">25 成員 · 8 在線</div>
-                        </div>
+                    <div class="empty-state">
+                        <i class="fas fa-hashtag"></i>
+                        <p>暫無聊天室</p>
+                        <small>創建或加入聊天室</small>
                     </div>
                 </div>
             </div>
@@ -276,188 +649,9 @@
 
         <!-- Chat Interface -->
         <div id="chat-interface" class="chat-interface hidden">
-            <!-- Chat Header -->
-            <div class="chat-header">
-                <div class="chat-info">
-                    <div class="chat-avatar-container">
-                        <img id="chat-avatar" src="" alt="聊天頭像" class="chat-avatar">
-                        <div class="status-indicator" id="chat-status-indicator"></div>
-                    </div>
-                    <div class="chat-details">
-                        <h3 id="chat-name" class="chat-name">聊天名稱</h3>
-                        <div id="chat-status-text" class="chat-status-text">在線</div>
-                    </div>
-                </div>
-                <div class="chat-actions">
-                    <button class="btn-icon" id="voice-call-btn" title="語音通話">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                    <button class="btn-icon" id="video-call-btn" title="視頻通話">
-                        <i class="fas fa-video"></i>
-                    </button>
-                    <button class="btn-icon" id="chat-info-btn" title="聊天信息">
-                        <i class="fas fa-info-circle"></i>
-                    </button>
-                    <button class="btn-icon" id="chat-menu-btn" title="更多選項">
-                        <i class="fas fa-ellipsis-v"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Typing Indicator -->
-            <div id="typing-indicator" class="typing-indicator hidden">
-                <span id="typing-user">Alice</span> 正在輸入
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-
-            <!-- Messages Container -->
-            <div id="messages-container" class="messages-container">
-                <!-- Messages will be inserted here -->
-            </div>
-
-            <!-- Reply Preview -->
-            <div id="reply-preview" class="reply-preview hidden">
-                <div class="reply-content">
-                    <div class="reply-header">
-                        <i class="fas fa-reply"></i>
-                        回覆 <span id="reply-to-user">Alice</span>
-                    </div>
-                    <div id="reply-message" class="reply-message">這是被回覆的消息內容</div>
-                </div>
-                <button class="btn-icon" id="cancel-reply">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- Upload Preview -->
-            <div id="upload-preview" class="upload-preview hidden">
-                <div id="upload-items" class="upload-items">
-                    <!-- Upload items will be inserted here -->
-                </div>
-            </div>
-
-            <!-- Message Input Area -->
-            <div class="message-input-area">
-                <div class="input-container">
-                    <button class="btn-icon" id="attach-btn" title="附件">
-                        <i class="fas fa-paperclip"></i>
-                    </button>
-                    <div class="input-wrapper">
-                        <div id="message-input" class="message-input" contenteditable="true" data-placeholder="輸入消息..."></div>
-                        <button class="btn-icon" id="emoji-btn" title="表情符號">
-                            <i class="fas fa-smile"></i>
-                        </button>
-                    </div>
-                    <button class="btn btn-primary" id="send-btn" title="發送" disabled>
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                    <button class="btn-icon voice-btn hidden" id="voice-btn" title="語音訊息">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- File Input -->
-            <input type="file" id="file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display: none;">
+            <!-- Chat interface will be loaded here when a chat is selected -->
         </div>
     </main>
-</div>
-
-<!-- Emoji Picker -->
-<div id="emoji-picker" class="emoji-picker">
-    <div class="emoji-picker-header">
-        <button class="emoji-category-btn active" data-category="smileys">
-            <i class="fas fa-smile"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="people">
-            <i class="fas fa-user"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="nature">
-            <i class="fas fa-leaf"></i>
-        </button>
-        <button class="emoji-category-btn" data-category="food">
-            <i class="fas fa-utensils"></i>
-        </button>
-    </div>
-    <div class="emoji-picker-content">
-        <div class="emoji-grid" id="emoji-grid">
-            <!-- Emojis will be inserted here -->
-        </div>
-    </div>
-</div>
-
-<!-- Context Menu -->
-<div id="context-menu" class="context-menu">
-    <button class="context-menu-item" id="reply-message">
-        <i class="fas fa-reply"></i>
-        <span>回覆</span>
-    </button>
-    <button class="context-menu-item" id="forward-message">
-        <i class="fas fa-share"></i>
-        <span>轉發</span>
-    </button>
-    <button class="context-menu-item" id="copy-message">
-        <i class="fas fa-copy"></i>
-        <span>複製</span>
-    </button>
-    <div class="context-menu-separator"></div>
-    <button class="context-menu-item" id="star-message">
-        <i class="fas fa-star"></i>
-        <span>收藏</span>
-    </button>
-    <button class="context-menu-item" id="edit-message">
-        <i class="fas fa-edit"></i>
-        <span>編輯</span>
-    </button>
-    <div class="context-menu-separator"></div>
-    <button class="context-menu-item danger" id="delete-message">
-        <i class="fas fa-trash"></i>
-        <span>刪除</span>
-    </button>
-</div>
-
-<!-- Voice Recording Modal -->
-<div id="voice-recording" class="voice-recording hidden">
-    <div class="recording-animation">
-        <i class="fas fa-microphone"></i>
-    </div>
-    <div class="recording-duration" id="recording-duration">00:00</div>
-    <p>正在錄製語音訊息...</p>
-    <div class="recording-controls">
-        <button class="btn btn-secondary" id="cancel-recording">
-            <i class="fas fa-times"></i>
-            取消
-        </button>
-        <button class="btn btn-primary" id="send-recording">
-            <i class="fas fa-paper-plane"></i>
-            發送
-        </button>
-    </div>
-</div>
-
-<!-- Call Notification -->
-<div id="call-notification" class="call-notification">
-    <div class="call-header">
-        <img id="caller-avatar" src="" alt="來電者" class="call-avatar">
-        <div class="call-info">
-            <h4 id="caller-name">來電者</h4>
-            <p id="call-type">語音通話</p>
-        </div>
-    </div>
-    <div class="call-actions">
-        <button class="btn call-decline" id="decline-call">
-            <i class="fas fa-phone-slash"></i>
-            拒絕
-        </button>
-        <button class="btn call-accept" id="accept-call">
-            <i class="fas fa-phone"></i>
-            接聽
-        </button>
-    </div>
 </div>
 
 <!-- Notifications Container -->
@@ -475,7 +669,7 @@
 <script src="../assets/js/components/Chat.js"></script>
 <script src="../assets/js/components/EmojiPicker.js"></script>
 <script src="../assets/js/components/VoiceRecorder.js"></script>
-<script src="../assets/js/app.js"></script>
+<script src="../assets/js/main.js"></script>
 
 <!-- Fallback JavaScript for missing external files -->
 <script>
@@ -501,7 +695,20 @@
         window.AuthService = class {
             async login(data) { return { success: true, data: {} }; }
             async logout() { return { success: true }; }
-            async getStatus() { return { success: true, data: { authenticated: true } }; }
+            async getStatus() {
+                const isAuth = localStorage.getItem('isAuthenticated');
+                const user = localStorage.getItem('currentUser');
+                if (isAuth === 'true' && user) {
+                    return {
+                        success: true,
+                        data: {
+                            authenticated: true,
+                            user: JSON.parse(user)
+                        }
+                    };
+                }
+                return { success: false, data: { authenticated: false } };
+            }
         };
     }
 
@@ -509,6 +716,24 @@
         window.NotificationComponent = class {
             show(message, type, duration = 3000) {
                 console.log(`[${type.toUpperCase()}] ${message}`);
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    z-index: 9999;
+                    font-size: 14px;
+                    font-weight: 500;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), duration);
             }
         };
     }
@@ -521,35 +746,20 @@
             this.currentUser = null;
             this.currentChat = null;
             this.currentTheme = 'light';
-            this.isRecording = false;
-            this.emojiCategories = {
-                smileys: ['😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘'],
-                people: ['👋', '🤚', '🖐', '✋', '🖖', '👌', '🤏', '✌', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕'],
-                nature: ['🌱', '🌿', '🍀', '🌾', '🌵', '🌲', '🌳', '🌴', '🌸', '🌺', '🌻', '🌹', '🥀', '🌷', '💐', '🌼'],
-                food: ['🍎', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆']
-            };
             this.init();
         }
 
         async init() {
-            // Check authentication (but don't redirect for demo)
-            const isAuth = this.checkAuth();
-            if (!isAuth) {
-                console.log('No authentication found, using demo mode');
-                // Set demo authentication
-                localStorage.setItem('isAuthenticated', 'true');
-                localStorage.setItem('currentUser', JSON.stringify({
-                    id: 'demo',
-                    username: '演示用戶',
-                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
-                }));
+            // Check authentication first
+            if (!this.checkAuth()) {
+                this.redirectToLogin();
+                return;
             }
 
             this.loadUserData();
             this.initTheme();
             this.bindEvents();
-            this.initEmojiPicker();
-            this.loadDemoData();
+            this.loadAppData();
             console.log('Elite Chat App initialized');
         }
 
@@ -564,6 +774,10 @@
             }
         }
 
+        redirectToLogin() {
+            window.location.href = 'login.html';
+        }
+
         loadUserData() {
             try {
                 const userData = localStorage.getItem('currentUser');
@@ -571,30 +785,25 @@
                     this.currentUser = JSON.parse(userData);
                     this.updateUserProfile();
                 } else {
-                    // Set default demo user if no user data
-                    this.currentUser = {
-                        id: 'demo',
-                        username: '演示用戶',
-                        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
-                    };
-                    this.updateUserProfile();
+                    this.redirectToLogin();
                 }
             } catch (error) {
                 console.error('Error loading user data:', error);
-                // Fallback to demo user
-                this.currentUser = {
-                    id: 'demo',
-                    username: '演示用戶',
-                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo'
-                };
-                this.updateUserProfile();
+                this.redirectToLogin();
             }
         }
 
         updateUserProfile() {
             if (!this.currentUser) return;
-            document.getElementById('user-name').textContent = this.currentUser.username;
-            document.getElementById('user-avatar').src = this.currentUser.avatar;
+
+            const userNameEl = document.getElementById('user-name');
+            const userAvatarEl = document.getElementById('user-avatar');
+
+            if (userNameEl) userNameEl.textContent = this.currentUser.username || 'Unknown User';
+            if (userAvatarEl) {
+                userAvatarEl.src = this.currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+                userAvatarEl.alt = `${this.currentUser.username || 'User'} 的頭像`;
+            }
         }
 
         initTheme() {
@@ -606,6 +815,7 @@
             this.currentTheme = theme;
             document.body.className = `theme-${theme}`;
             localStorage.setItem('theme', theme);
+
             const themeIcon = document.querySelector('#theme-toggle-btn i');
             if (themeIcon) {
                 themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
@@ -613,11 +823,11 @@
         }
 
         toggleTheme() {
-            const themes = ['light', 'dark', 'sepia', 'ocean'];
+            const themes = ['light', 'dark'];
             const currentIndex = themes.indexOf(this.currentTheme);
             const nextIndex = (currentIndex + 1) % themes.length;
             this.setTheme(themes[nextIndex]);
-            this.showNotification(`已切換到${themes[nextIndex]}主題`, 'success');
+            this.showNotification(`已切換到${themes[nextIndex] === 'light' ? '淺色' : '深色'}主題`, 'success');
         }
 
         bindEvents() {
@@ -638,420 +848,107 @@
                 });
             });
 
-            // Chat/Contact/Room selection
-            this.bindItemSelection();
+            // Action buttons
+            document.getElementById('start-new-chat')?.addEventListener('click', this.showNewChatModal.bind(this));
+            document.getElementById('new-chat-btn')?.addEventListener('click', this.showNewChatModal.bind(this));
+            document.getElementById('add-contact-btn')?.addEventListener('click', this.showAddContactModal.bind(this));
+            document.getElementById('create-room-btn')?.addEventListener('click', this.showCreateRoomModal.bind(this));
 
-            // Message input
-            const messageInput = document.getElementById('message-input');
-            if (messageInput) {
-                messageInput.addEventListener('input', this.handleMessageInput.bind(this));
-                messageInput.addEventListener('keydown', this.handleMessageKeydown.bind(this));
-            }
-
-            // Buttons
-            document.getElementById('send-btn')?.addEventListener('click', this.sendMessage.bind(this));
-            document.getElementById('attach-btn')?.addEventListener('click', () => {
-                document.getElementById('file-input').click();
-            });
-            document.getElementById('emoji-btn')?.addEventListener('click', this.toggleEmojiPicker.bind(this));
-            document.getElementById('voice-btn')?.addEventListener('click', this.toggleVoiceRecording.bind(this));
-
-            // File input
-            document.getElementById('file-input')?.addEventListener('change', this.handleFileSelect.bind(this));
-
-            // Global events
-            document.addEventListener('click', this.handleGlobalClick.bind(this));
-        }
-
-        bindItemSelection() {
-            // Chat items
-            document.querySelectorAll('.chat-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const chatId = item.dataset.chatId;
-                    this.selectChat(chatId, item);
-                });
-            });
-
-            // Contact items
-            document.querySelectorAll('.contact-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const contactId = item.dataset.contactId;
-                    this.selectContact(contactId, item);
-                });
-            });
-
-            // Room items
-            document.querySelectorAll('.room-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const roomId = item.dataset.roomId;
-                    this.selectRoom(roomId, item);
-                });
-            });
-        }
-
-        selectChat(chatId, element) {
-            this.clearActiveItems();
-            element.classList.add('active');
-            const unreadCount = element.querySelector('.unread-count');
-            if (unreadCount) unreadCount.remove();
-            const chatData = this.getDemoChatData(chatId);
-            this.loadChat(chatData);
-            this.closeMobileSidebar();
-        }
-
-        selectContact(contactId, element) {
-            this.clearActiveItems();
-            element.classList.add('active');
-            const contactData = this.getDemoContactData(contactId);
-            this.startNewChatWithContact(contactData);
-            this.closeMobileSidebar();
-        }
-
-        selectRoom(roomId, element) {
-            this.clearActiveItems();
-            element.classList.add('active');
-            const roomData = this.getDemoRoomData(roomId);
-            this.loadRoom(roomData);
-            this.closeMobileSidebar();
-        }
-
-        clearActiveItems() {
-            document.querySelectorAll('.chat-item, .contact-item, .room-item').forEach(item => {
-                item.classList.remove('active');
-            });
-        }
-
-        loadChat(chatData) {
-            this.currentChat = chatData;
-            this.showChatInterface();
-            this.updateChatHeader(chatData);
-            this.loadChatMessages(chatData.id);
-        }
-
-        startNewChatWithContact(contactData) {
-            const chatData = {
-                id: `contact_${contactData.id}`,
-                name: contactData.name,
-                avatar: contactData.avatar,
-                status: contactData.status,
-                type: 'direct'
-            };
-            this.loadChat(chatData);
-        }
-
-        loadRoom(roomData) {
-            this.currentChat = roomData;
-            this.showChatInterface();
-            this.updateChatHeader(roomData);
-            this.loadRoomMessages(roomData.id);
-        }
-
-        showChatInterface() {
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('chat-interface').classList.remove('hidden');
-        }
-
-        updateChatHeader(chatData) {
-            document.getElementById('chat-name').textContent = chatData.name;
-            document.getElementById('chat-avatar').src = chatData.avatar;
-            if (chatData.type === 'room') {
-                document.getElementById('chat-status-text').textContent = chatData.description;
-                document.getElementById('chat-status-indicator').style.display = 'none';
-            } else {
-                document.getElementById('chat-status-text').textContent = this.getStatusText(chatData.status);
-                this.updateStatusIndicator('chat-status-indicator', chatData.status);
-            }
-        }
-
-        loadChatMessages(chatId) {
-            const messages = this.getDemoMessages(chatId);
-            this.displayMessages(messages);
-        }
-
-        loadRoomMessages(roomId) {
-            const messages = this.getDemoRoomMessages(roomId);
-            this.displayMessages(messages);
-        }
-
-        displayMessages(messages) {
-            const container = document.getElementById('messages-container');
-            container.innerHTML = '';
-            messages.forEach(message => {
-                const messageElement = this.createMessageElement(message);
-                container.appendChild(messageElement);
-            });
-            container.scrollTop = container.scrollHeight;
-        }
-
-        createMessageElement(message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${message.isOwn ? 'own' : ''}`;
-            messageDiv.innerHTML = `
-            <div class="message-bubble">
-                <p class="message-text">${message.content}</p>
-                <div class="message-time">${message.time}</div>
-            </div>
-        `;
-            return messageDiv;
+            // Search functionality
+            document.getElementById('chat-search')?.addEventListener('input', (e) => this.handleSearch(e, 'chat'));
+            document.getElementById('contact-search')?.addEventListener('input', (e) => this.handleSearch(e, 'contact'));
+            document.getElementById('room-search')?.addEventListener('input', (e) => this.handleSearch(e, 'room'));
         }
 
         switchTab(tabName) {
+            // Update active tab
             document.querySelectorAll('.nav-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+
+            // Show corresponding content
             document.querySelectorAll('.tab-pane').forEach(pane => {
                 pane.classList.remove('active');
             });
             document.getElementById(`${tabName}-tab`)?.classList.add('active');
+
+            // Load content based on tab
+            this.loadTabContent(tabName);
         }
 
-        handleMessageInput() {
-            const messageInput = document.getElementById('message-input');
-            const content = messageInput.textContent.trim();
-            this.updateSendButton();
-        }
-
-        handleMessageKeydown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
+        loadTabContent(tabName) {
+            switch (tabName) {
+                case 'chats':
+                    this.loadChats();
+                    break;
+                case 'contacts':
+                    this.loadContacts();
+                    break;
+                case 'rooms':
+                    this.loadRooms();
+                    break;
             }
         }
 
-        updateSendButton() {
-            const messageInput = document.getElementById('message-input');
-            const sendBtn = document.getElementById('send-btn');
-            const voiceBtn = document.getElementById('voice-btn');
-            const hasContent = messageInput.textContent.trim().length > 0;
-
-            if (sendBtn && voiceBtn) {
-                sendBtn.disabled = !hasContent;
-                if (hasContent) {
-                    sendBtn.classList.remove('hidden');
-                    voiceBtn.classList.add('hidden');
-                } else {
-                    sendBtn.classList.add('hidden');
-                    voiceBtn.classList.remove('hidden');
-                }
-            }
+        async loadChats() {
+            // Here you would load chats from your API
+            console.log('Loading chats...');
+            // For now, show empty state
         }
 
-        sendMessage() {
-            const messageInput = document.getElementById('message-input');
-            const content = messageInput.textContent.trim();
-            if (!content || !this.currentChat) return;
-
-            const message = {
-                id: Date.now().toString(),
-                content,
-                type: 'text',
-                isOwn: true,
-                time: this.formatTime(new Date()),
-                sender: {
-                    id: this.currentUser.id,
-                    name: this.currentUser.username,
-                    avatar: this.currentUser.avatar
-                }
-            };
-
-            this.addMessageToChat(message);
-            messageInput.textContent = '';
-            this.updateSendButton();
-            setTimeout(() => this.simulateResponse(), 1000 + Math.random() * 2000);
+        async loadContacts() {
+            // Here you would load contacts from your API
+            console.log('Loading contacts...');
+            // For now, show empty state
         }
 
-        addMessageToChat(message) {
-            const container = document.getElementById('messages-container');
-            const messageElement = this.createMessageElement(message);
-            container.appendChild(messageElement);
-            container.scrollTop = container.scrollHeight;
+        async loadRooms() {
+            // Here you would load rooms from your API
+            console.log('Loading rooms...');
+            // For now, show empty state
         }
 
-        simulateResponse() {
-            if (!this.currentChat) return;
-            const responses = ["好的，我知道了！", "謝謝你的消息 😊", "聽起來不錯", "我待會回覆你", "👍", "有道理"];
-            const response = {
-                id: Date.now().toString(),
-                content: responses[Math.floor(Math.random() * responses.length)],
-                type: 'text',
-                isOwn: false,
-                time: this.formatTime(new Date()),
-                sender: {
-                    id: this.currentChat.id,
-                    name: this.currentChat.name,
-                    avatar: this.currentChat.avatar
-                }
-            };
-            this.addMessageToChat(response);
-        }
-
-        initEmojiPicker() {
-            this.renderEmojiCategory('smileys');
-            document.querySelectorAll('.emoji-category-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.emoji-category-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    this.renderEmojiCategory(btn.dataset.category);
-                });
-            });
-            document.getElementById('emoji-grid').addEventListener('click', (e) => {
-                if (e.target.classList.contains('emoji-item')) {
-                    this.insertEmoji(e.target.textContent);
-                    this.toggleEmojiPicker(); // Close emoji picker after selection
-                }
-            });
-        }
-
-        renderEmojiCategory(category) {
-            const emojiGrid = document.getElementById('emoji-grid');
-            const emojis = this.emojiCategories[category] || [];
-            emojiGrid.innerHTML = emojis.map(emoji =>
-                `<button type="button" class="emoji-item" tabindex="0">${emoji}</button>`
-            ).join('');
-        }
-
-        toggleEmojiPicker() {
-            const emojiPicker = document.getElementById('emoji-picker');
-            if (emojiPicker) {
-                emojiPicker.classList.toggle('show');
-            }
-        }
-
-        insertEmoji(emoji) {
-            const messageInput = document.getElementById('message-input');
-            if (messageInput) {
-                // Insert emoji at cursor position or at the end
-                const selection = window.getSelection();
-                if (selection.rangeCount > 0 && messageInput.contains(selection.focusNode)) {
-                    const range = selection.getRangeAt(0);
-                    range.deleteContents();
-                    range.insertNode(document.createTextNode(emoji));
-                    range.collapse(false);
-                } else {
-                    messageInput.textContent += emoji;
-                }
-                messageInput.focus();
-                this.updateSendButton();
-            }
-        }
-
-        toggleVoiceRecording() {
-            if (this.isRecording) {
-                this.stopRecording();
-            } else {
-                this.startRecording();
-            }
-        }
-
-        startRecording() {
-            this.isRecording = true;
-            this.recordingDuration = 0;
-            const voiceRecording = document.getElementById('voice-recording');
-            if (voiceRecording) {
-                voiceRecording.classList.remove('hidden');
-            }
-
-            // Start timer
-            this.recordingInterval = setInterval(() => {
-                this.recordingDuration++;
-                const durationEl = document.getElementById('recording-duration');
-                if (durationEl) {
-                    durationEl.textContent = this.formatDuration(this.recordingDuration);
-                }
-            }, 1000);
-
-            this.showNotification('開始錄音...', 'info');
-        }
-
-        stopRecording() {
-            this.isRecording = false;
-            if (this.recordingInterval) {
-                clearInterval(this.recordingInterval);
-            }
-            const voiceRecording = document.getElementById('voice-recording');
-            if (voiceRecording) {
-                voiceRecording.classList.add('hidden');
-            }
-            this.showNotification('錄音已停止', 'info');
-        }
-
-        formatDuration(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        handleFileSelect(e) {
-            const files = Array.from(e.target.files);
-            files.forEach(file => {
-                this.showNotification(`已選擇文件: ${file.name}`, 'success');
-            });
-            e.target.value = '';
+        loadAppData() {
+            // Load initial data
+            this.loadTabContent('chats');
         }
 
         toggleMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('show');
+            sidebar?.classList.toggle('open');
+            overlay?.classList.toggle('show');
         }
 
         closeMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.remove('open');
-            overlay.classList.remove('show');
+            sidebar?.classList.remove('open');
+            overlay?.classList.remove('show');
         }
 
         handleLogout() {
             if (confirm('確定要登出嗎？')) {
                 localStorage.removeItem('isAuthenticated');
                 localStorage.removeItem('currentUser');
-                window.location.href = 'login.html';
+                this.showNotification('已成功登出', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
             }
         }
 
-        handleGlobalClick(e) {
-            // Close emoji picker if clicking outside
-            const emojiPicker = document.getElementById('emoji-picker');
-            const emojiBtn = document.getElementById('emoji-btn');
-            if (emojiPicker && emojiBtn &&
-                !emojiPicker.contains(e.target) &&
-                !emojiBtn.contains(e.target) &&
-                emojiPicker.classList.contains('show')) {
-                emojiPicker.classList.remove('show');
-            }
-
-            // Close context menu if clicking outside
-            const contextMenu = document.getElementById('context-menu');
-            if (contextMenu && !contextMenu.contains(e.target)) {
-                contextMenu.classList.remove('show');
-            }
+        showNewChatModal() {
+            this.showNotification('新聊天功能開發中...', 'info');
         }
 
-        updateStatusIndicator(elementId, status) {
-            const indicator = document.getElementById(elementId);
-            if (indicator) {
-                indicator.className = `status-indicator ${status}`;
-            }
+        showAddContactModal() {
+            this.showNotification('添加聯繫人功能開發中...', 'info');
         }
 
-        getStatusText(status) {
-            const statusMap = {
-                online: '在線',
-                away: '離開',
-                busy: '忙碌'
-            };
-            return statusMap[status] || '離線';
-        }
-
-        formatTime(date) {
-            return date.toLocaleTimeString('zh-TW', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            });
+        showCreateRoomModal() {
+            this.showNotification('創建房間功能開發中...', 'info');
         }
 
         handleSearch(e, type) {
@@ -1073,7 +970,6 @@
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
 
-            // Create notification content
             const content = document.createElement('div');
             content.className = 'notification-content';
 
@@ -1089,23 +985,23 @@
 
             // Style the notification
             notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 9999;
-            animation: slideInRight 0.3s ease-out;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            max-width: 400px;
-        `;
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                animation: slideInRight 0.3s ease-out;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                max-width: 400px;
+            `;
 
             // Add to notifications container or body
             const container = document.getElementById('notifications-container') || document.body;
@@ -1119,61 +1015,40 @@
                 }
             }, duration);
         }
-
-        // Demo data methods
-        getDemoChatData(chatId) {
-            const chats = {
-                '1': { id: '1', name: 'Alice Johnson', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice', status: 'online' },
-                '2': { id: '2', name: 'Bob Smith', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob', status: 'away' },
-                '3': { id: '3', name: 'Carol White', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=carol', status: 'busy' }
-            };
-            return chats[chatId];
-        }
-
-        getDemoContactData(contactId) {
-            const contacts = {
-                '1': { id: '1', name: 'Charlie Brown', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=charlie', status: 'online' },
-                '2': { id: '2', name: 'Diana Wilson', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=diana', status: 'busy' },
-                '3': { id: '3', name: 'Eve Davis', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=eve', status: 'away' }
-            };
-            return contacts[contactId];
-        }
-
-        getDemoRoomData(roomId) {
-            const rooms = {
-                '1': { id: '1', name: '開發討論', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=dev', description: '15 成員 · 3 在線', type: 'room' },
-                '2': { id: '2', name: '設計團隊', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=design', description: '8 成員 · 2 在線', type: 'room' },
-                '3': { id: '3', name: '項目管理', avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=project', description: '25 成員 · 8 在線', type: 'room' }
-            };
-            return rooms[roomId];
-        }
-
-        getDemoMessages(chatId) {
-            const messages = {
-                '1': [
-                    { id: '1', content: '你好！最近怎麼樣？', isOwn: false, time: '09:30' },
-                    { id: '2', content: '很好啊！工作很忙，但還算順利 😊', isOwn: true, time: '09:31' },
-                    { id: '3', content: '那就好！有空一起喝咖啡嗎？', isOwn: false, time: '09:32' }
-                ]
-            };
-            return messages[chatId] || [];
-        }
-
-        getDemoRoomMessages(roomId) {
-            const messages = {
-                '1': [
-                    { id: '1', content: '大家好！新功能的開發進度如何？', isOwn: false, time: '10:00' },
-                    { id: '2', content: '前端部分已完成 80%，預計本週末可以完成', isOwn: true, time: '10:01' },
-                    { id: '3', content: '後端 API 也差不多了，今天會部署到測試環境', isOwn: false, time: '10:02' }
-                ]
-            };
-            return messages[roomId] || [];
-        }
-
-        loadDemoData() {
-            console.log('Elite Chat App loaded successfully');
-        }
     }
+
+    // Add notification animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    `;
+    document.head.appendChild(style);
 
     // Initialize app when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {

@@ -1,4 +1,3 @@
-
 class AuthService {
     constructor(options = {}) {
         this.options = {

@@ -403,7 +403,7 @@ class ArrayValidator extends BaseValidator {
         return this;
     }
 }
-
+//
 // 日期驗證器
 class DateValidator extends BaseValidator {
     required(message = '請選擇日期') {
