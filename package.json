@@ -27,7 +27,7 @@
     "pwa",
     "end-to-end-encryption"
   ],
-  "author": "Elite Chat Team",
+  "author": "Amai",
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -76,6 +76,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/elite-chat-app.git"
+    "url": "https://github.com/cepLMFAO/elite-chat-app.git"
   }
 }
