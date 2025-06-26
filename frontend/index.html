@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elite Chat - 企業級即時聊天</title>
+
+  <style>
+    :root {
+      --primary-color: #667eea;
+      --primary-dark: #5a67d8;
+      --secondary-color: #764ba2;
+      --white: #ffffff;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-600: #4b5563;
+      --gray-900: #111827;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --error-color: #ef4444;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --spacing-2xl: 3rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-size-xl: 1.25rem;
+      --font-size-2xl: 1.5rem;
+      --font-size-3xl: 1.875rem;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .welcome-container {
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-2xl);
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      animation: slideInUp 0.8s ease-out;
+    }
+
+    .welcome-logo {
+      font-size: 5rem;
+      color: var(--primary-color);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .welcome-container h1 {
+      margin: 0 0 var(--spacing-md) 0;
+      font-size: var(--font-size-3xl);
+      font-weight: 700;
+      color: var(--gray-900);
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-container p {
+      margin: 0 0 var(--spacing-2xl) 0;
+      color: var(--gray-600);
+      font-size: var(--font-size-lg);
+      line-height: 1.6;
+    }
+
+    .welcome-features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+
+    .feature-item {
+      text-align: center;
+      padding: var(--spacing-md);
+    }
+
+    .feature-icon {
+      font-size: var(--font-size-2xl);
+      color: var(--primary-color);
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .feature-text {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      font-weight: 500;
+    }
+
+    .welcome-actions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-md) var(--spacing-xl);
+      font-size: var(--font-size-base);
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      min-width: 140px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: var(--white);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary-color);
+      color: var(--white);
+    }
+
+    .status-message {
+      padding: var(--spacing-md);
+      border-radius: var(--radius-lg);
+      margin: var(--spacing-md) 0;
+      display: none;
+      align-items: center;
+      gap: var(--spacing-sm);
+      font-weight: 500;
+    }
+
+    .status-success {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success-color);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-warning {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: var(--warning-color);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .status-error {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: var(--error-color);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .welcome-container {
+        padding: var(--spacing-xl);
+        margin: var(--spacing-lg);
+      }
+
+      .welcome-logo {
+        font-size: 4rem;
+      }
+
+      .welcome-container h1 {
+        font-size: var(--font-size-2xl);
+      }
+
+      .welcome-features {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<div class="welcome-container">
+  <div class="welcome-logo">
+    <i class="fas fa-comments"></i>
+  </div>
+
+  <h1>歡迎使用 Elite Chat</h1>
+  <p>企業級即時聊天解決方案，讓團隊溝通更高效、更安全。支持實時消息、文件分享、語音通話等豐富功能。</p>
+
+  <div class="welcome-features">
+    <div class="feature-item">
+      <div class="feature-icon">
+        <i class="fas fa-bolt"></i>
+      </div>
+      <div class="feature-text">即時消息</div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <div class="feature-text">安全加密</div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">
+        <i class="fas fa-users"></i>
+      </div>
+      <div class="feature-text">團隊協作</div>
+    </div>
+    <div class="feature-item">
+      <div class="feature-icon">
+        <i class="fas fa-mobile-alt"></i>
+      </div>
+      <div class="feature-text">跨平台</div>
+    </div>
+  </div>
+
+  <div class="welcome-actions">
+    <a href="/pages/login.html" class="btn btn-primary">
+      <i class="fas fa-rocket"></i>
+      立即開始
+    </a>
+    <a href="/pages/login.html" class="btn btn-outline">
+      <i class="fas fa-sign-in-alt"></i>
+      已有帳號？登錄
+    </a>
+  </div>
+
+  <div id="status-container">
+    <div id="server-status" class="status-message">
+      <i class="fas fa-info-circle"></i>
+      <span>正在檢查伺服器連接...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 簡化版應用初始化
+  class SimpleEliteChatApp {
+    constructor() {
+      console.log('Elite Chat App - Simple version loaded');
+      this.init();
+    }
+
+    init() {
+      // 檢查認證狀態
+      this.checkAuth();
+
+      // 檢查伺服器狀態（非阻塞）
+      this.checkServerStatus();
+
+      // 綁定事件
+      this.bindEvents();
+
+      console.log('Elite Chat App initialized successfully');
+    }
+
+    checkAuth() {
+      try {
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const currentUser = localStorage.getItem('currentUser');
+
+        if (isAuthenticated === 'true' && currentUser && currentUser !== 'null') {
+          console.log('User is authenticated, redirecting to chat...');
+          // 延遲跳轉，讓用戶看到頁面
+          setTimeout(() => {
+            window.location.href = '/pages/chat.html';
+          }, 1000);
+          return;
+        }
+      } catch (error) {
+        console.warn('Auth check failed:', error);
+      }
+
+      console.log('User is not authenticated');
+    }
+
+    async checkServerStatus() {
+      const statusElement = document.getElementById('server-status');
+
+      try {
+        // 設置 3 秒超時
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+        const response = await fetch('/health', {
+          signal: controller.signal,
+          cache: 'no-cache'
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'ok') {
+            this.showStatus('success', '伺服器連接正常');
+            return;
+          }
+        }
+
+        this.showStatus('warning', '伺服器狀態異常');
+
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          this.showStatus('warning', '伺服器響應超時');
+        } else {
+          this.showStatus('warning', '無法連接到伺服器');
+        }
+      }
+
+      // 3秒後隱藏狀態消息
+      setTimeout(() => {
+        if (statusElement) {
+          statusElement.style.display = 'none';
+        }
+      }, 3000);
+    }
+
+    showStatus(type, message) {
+      const statusElement = document.getElementById('server-status');
+      if (!statusElement) return;
+
+      statusElement.className = `status-message status-${type}`;
+      statusElement.style.display = 'flex';
+
+      const icon = type === 'success' ? 'fa-check-circle' :
+              type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+
+      statusElement.innerHTML = `
+                    <i class="fas ${icon}"></i>
+                    <span>${message}</span>
+                `;
+    }
+
+    bindEvents() {
+      // 處理在線/離線狀態
+      window.addEventListener('online', () => {
+        this.showStatus('success', '網路連接已恢復');
+      });
+
+      window.addEventListener('offline', () => {
+        this.showStatus('warning', '網路連接已斷開');
+      });
+
+      // 處理錯誤
+      window.addEventListener('error', (event) => {
+        console.error('Global error:', event.error);
+      });
+
+      window.addEventListener('unhandledrejection', (event) => {
+        console.error('Unhandled promise rejection:', event.reason);
+      });
+    }
+  }
+
+  // 在 DOM 載入完成後初始化
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      window.eliteChatApp = new SimpleEliteChatApp();
+    } catch (error) {
+      console.error('Failed to initialize app:', error);
+    }
+  });
+</script>
+</body>
+</html>

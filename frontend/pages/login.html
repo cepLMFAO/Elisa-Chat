@@ -3,169 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Elite Chat - 登錄頁面">
-    <title>登錄 - Elite Chat</title>
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="stylesheet" href="../assets/css/themes.css">
-    <link rel="stylesheet" href="../assets/css/components.css">
-    <link rel="stylesheet" href="../assets/css/animations.css">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>登錄/註冊 - Elite Chat</title>
 
     <style>
-        .login-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: var(--spacing-lg);
-        }
-
-        .login-card {
-            background: var(--white);
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-2xl);
-            box-shadow: var(--shadow-xl);
-            width: 100%;
-            max-width: 400px;
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: var(--spacing-2xl);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            font-size: var(--font-size-xl);
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .logo i {
-            font-size: var(--font-size-2xl);
-        }
-
-        .login-header h1 {
-            margin: 0 0 var(--spacing-sm) 0;
-            font-size: var(--font-size-2xl);
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .login-header p {
-            margin: 0;
-            color: var(--text-secondary);
-            font-size: var(--font-size-sm);
-        }
-
-        .alert {
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-md);
-            display: none;
-        }
-
-        .alert.show {
-            display: block;
-            animation: slideInDown 0.3s ease-out;
-        }
-
-        .alert-success {
-            background-color: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
-        }
-
-        .alert-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-
-        .alert-info {
-            background-color: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #93c5fd;
-        }
-
-        .theme-toggle-btn {
-            position: fixed;
-            top: var(--spacing-lg);
-            right: var(--spacing-lg);
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: var(--radius-full);
-            color: var(--white);
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            backdrop-filter: blur(10px);
-        }
-
-        .theme-toggle-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
-        }
-
-        .forgot-password-section {
-            text-align: center;
-            margin-top: var(--spacing-lg);
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid var(--border-light);
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                padding: var(--spacing-md);
-            }
-
-            .login-card {
-                padding: var(--spacing-lg);
-            }
-        }
-
-        /* CSS Variables */
         :root {
             --primary-color: #667eea;
             --primary-dark: #5a67d8;
@@ -175,28 +15,24 @@
             --gray-100: #f3f4f6;
             --gray-200: #e5e7eb;
             --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --text-tertiary: #9ca3af;
-            --border-light: #e5e7eb;
-            --border-medium: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-900: #111827;
             --success-color: #10b981;
+            --warning-color: #f59e0b;
             --error-color: #ef4444;
-            --info-color: #3b82f6;
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             --spacing-xs: 0.25rem;
             --spacing-sm: 0.5rem;
             --spacing-md: 1rem;
             --spacing-lg: 1.5rem;
             --spacing-xl: 2rem;
             --spacing-2xl: 3rem;
-            --radius-sm: 0.25rem;
+            --radius-sm: 0.375rem;
             --radius-md: 0.5rem;
             --radius-lg: 0.75rem;
             --radius-xl: 1rem;
-            --radius-full: 9999px;
-            --font-size-xs: 0.75rem;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
             --font-size-sm: 0.875rem;
             --font-size-base: 1rem;
             --font-size-lg: 1.125rem;
@@ -205,7 +41,6 @@
             --transition-fast: 150ms ease-in-out;
         }
 
-        /* Base styles */
         * {
             box-sizing: border-box;
         }
@@ -214,17 +49,76 @@
             margin: 0;
             padding: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-lg);
+        }
+
+        .auth-container {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .auth-tabs {
+            display: flex;
+            background: var(--gray-100);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: var(--spacing-lg);
+            text-align: center;
+            background: none;
+            border: none;
             font-size: var(--font-size-base);
-            line-height: 1.5;
-            color: var(--text-primary);
-            background-color: var(--white);
+            font-weight: 500;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all var(--transition-fast);
         }
 
-        .hidden {
-            display: none !important;
+        .auth-tab.active {
+            background: var(--white);
+            color: var(--primary-color);
+            font-weight: 600;
         }
 
-        /* Form Styles */
+        .auth-content {
+            padding: var(--spacing-2xl);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .logo {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .auth-header h1 {
+            margin: 0 0 var(--spacing-sm) 0;
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .auth-header p {
+            margin: 0;
+            color: var(--gray-600);
+            font-size: var(--font-size-sm);
+        }
+
         .auth-form {
             display: flex;
             flex-direction: column;
@@ -238,18 +132,18 @@
         }
 
         .form-group label {
+            font-weight: 500;
+            color: var(--gray-900);
+            font-size: var(--font-size-sm);
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
-            font-weight: 500;
-            color: var(--text-primary);
-            font-size: var(--font-size-sm);
         }
 
         .form-group input {
             width: 100%;
             padding: var(--spacing-md);
-            border: 2px solid var(--border-light);
+            border: 2px solid var(--gray-200);
             border-radius: var(--radius-lg);
             font-size: var(--font-size-base);
             transition: var(--transition-fast);
@@ -277,94 +171,16 @@
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: var(--text-tertiary);
+            color: var(--gray-600);
             cursor: pointer;
             padding: var(--spacing-xs);
             transition: var(--transition-fast);
         }
 
         .password-toggle:hover {
-            color: var(--text-secondary);
+            color: var(--gray-900);
         }
 
-        .form-error {
-            color: var(--error-color);
-            font-size: var(--font-size-xs);
-            font-weight: 500;
-            display: none;
-        }
-
-        .form-error.show {
-            display: block;
-        }
-
-        .form-help {
-            color: var(--text-tertiary);
-            font-size: var(--font-size-xs);
-        }
-
-        /* Button Styles */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-md) var(--spacing-lg);
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            text-decoration: none;
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: var(--transition-fast);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-            color: var(--white);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-loading .btn-text {
-            transition: var(--transition-fast);
-        }
-
-        .btn-loading.loading .btn-text {
-            opacity: 0;
-        }
-
-        .btn-loading .btn-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Links */
-        .link {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-            transition: var(--transition-fast);
-        }
-
-        .link:hover {
-            color: var(--primary-dark);
-            text-decoration: underline;
-        }
-
-        /* Checkbox Styles */
         .checkbox-container {
             display: flex;
             align-items: flex-start;
@@ -385,7 +201,7 @@
             width: 18px;
             height: 18px;
             background-color: var(--white);
-            border: 2px solid var(--border-medium);
+            border: 2px solid var(--gray-300);
             border-radius: var(--radius-sm);
             transition: var(--transition-fast);
             flex-shrink: 0;
@@ -418,490 +234,633 @@
             display: block;
         }
 
-        /* Form Options */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            position: relative;
+            min-height: 48px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: var(--white);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-error {
+            color: var(--error-color);
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-xs);
+            display: none;
+        }
+
+        .form-error.show {
+            display: block;
+        }
+
         .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: var(--spacing-sm) 0;
-        }
-
-        /* Auth Switch */
-        .auth-switch {
-            text-align: center;
-            margin-top: var(--spacing-lg);
-            color: var(--text-secondary);
             font-size: var(--font-size-sm);
         }
+
+        .link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .status-message {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-lg);
+            display: none;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+
+        .status-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-message.show {
+            display: flex;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: var(--spacing-md);
+            }
+
+            .auth-content {
+                padding: var(--spacing-lg);
+            }
+
+            .auth-header h1 {
+                font-size: var(--font-size-xl);
+            }
+        }
     </style>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="theme-light">
-<!-- Theme Toggle -->
-<button class="theme-toggle-btn" id="theme-toggle" title="切換主題">
-    <i class="fas fa-moon"></i>
-</button>
 
-<!-- Login Container -->
-<div class="login-container">
-    <div class="login-card">
-        <!-- Header -->
-        <div class="login-header">
-            <div class="logo">
-                <i class="fas fa-comments"></i>
-                <span>Elite Chat</span>
-            </div>
-            <h1>歡迎回來</h1>
-            <p>登錄您的帳戶以開始聊天</p>
-        </div>
+<body>
+<div class="auth-container">
+    <!-- Tab Navigation -->
+    <div class="auth-tabs">
+        <button class="auth-tab active" onclick="showTab('login')" id="loginTab">
+            登錄
+        </button>
+        <button class="auth-tab" onclick="showTab('register')" id="registerTab">
+            註冊
+        </button>
+    </div>
 
-        <!-- Alert -->
-        <div id="alert" class="alert">
-            <span id="alert-message"></span>
+    <div class="auth-content">
+        <!-- Status Messages -->
+        <div id="statusMessage" class="status-message">
+            <i class="fas fa-info-circle"></i>
+            <span id="statusText"></span>
         </div>
 
         <!-- Login Form -->
-        <form id="login-form" class="auth-form">
-            <div class="form-group">
-                <label for="identifier">
-                    <i class="fas fa-user"></i>
-                    用戶名或郵箱
-                </label>
-                <input
-                        type="text"
-                        id="identifier"
-                        name="identifier"
-                        required
-                        placeholder="輸入用戶名或郵箱"
-                        autocomplete="username"
-                >
-                <div class="form-error"></div>
-            </div>
-
-            <div class="form-group">
-                <label for="password">
-                    <i class="fas fa-lock"></i>
-                    密碼
-                </label>
-                <div class="password-input">
-                    <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            required
-                            placeholder="輸入密碼"
-                            autocomplete="current-password"
-                    >
-                    <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
-                        <i class="fas fa-eye"></i>
-                    </button>
+        <div id="loginForm" class="auth-form-container">
+            <div class="auth-header">
+                <div class="logo">
+                    <i class="fas fa-comments"></i>
                 </div>
-                <div class="form-error"></div>
+                <h1>歡迎回來</h1>
+                <p>登錄您的帳戶以開始聊天</p>
             </div>
 
-            <!-- Two Factor Authentication Field (Hidden by default) -->
-            <div id="two-factor-group" class="form-group hidden">
-                <label for="two-factor-token">
-                    <i class="fas fa-shield-alt"></i>
-                    雙因素認證碼
-                </label>
-                <input
-                        type="text"
-                        id="two-factor-token"
-                        name="twoFactorToken"
-                        placeholder="輸入6位數驗證碼"
-                        maxlength="6"
-                        pattern="[0-9]{6}"
-                >
-                <div class="form-help">請輸入您的驗證應用程式中的6位數代碼</div>
-                <div class="form-error"></div>
-            </div>
-
-            <!-- Form Options -->
-            <div class="form-options">
-                <label class="checkbox-container">
-                    <input type="checkbox" id="remember-me" name="rememberMe">
-                    <span class="checkmark"></span>
-                    記住我
-                </label>
-                <a href="#" id="forgot-password-link" class="link">忘記密碼？</a>
-            </div>
-
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary btn-loading" id="login-btn">
-                <span class="btn-text">登錄</span>
-                <span class="btn-spinner hidden">
-                        <i class="fas fa-spinner fa-spin"></i>
-                    </span>
-            </button>
-
-            <!-- Auth Switch -->
-            <div class="auth-switch">
-                <span>還沒有帳戶？</span>
-                <a href="index.html" class="link">立即註冊</a>
-            </div>
-        </form>
-
-        <!-- Forgot Password Section -->
-        <div class="forgot-password-section hidden" id="forgot-password-section">
-            <h3>重置密碼</h3>
-            <p>輸入您的郵箱地址，我們將發送重置鏈接</p>
-
-            <form id="forgot-password-form" class="auth-form">
+            <form class="auth-form" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label for="forgot-email">
+                    <label for="loginUsername">
+                        <i class="fas fa-user"></i>
+                        用戶名或郵箱
+                    </label>
+                    <input
+                            type="text"
+                            id="loginUsername"
+                            required
+                            placeholder="請輸入用戶名或郵箱"
+                            autocomplete="username"
+                    >
+                    <div class="form-error" id="loginUsernameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        密碼
+                    </label>
+                    <div class="password-input">
+                        <input
+                                type="password"
+                                id="loginPassword"
+                                required
+                                placeholder="請輸入密碼"
+                                autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-error" id="loginPasswordError"></div>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="rememberMe">
+                        <span class="checkmark"></span>
+                        記住我
+                    </label>
+                    <a href="#" class="link" onclick="showForgotPassword()">忘記密碼？</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    登錄
+                </button>
+            </form>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm" class="auth-form-container hidden">
+            <div class="auth-header">
+                <div class="logo">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h1>創建帳戶</h1>
+                <p>加入我們開始精彩的聊天體驗</p>
+            </div>
+
+            <form class="auth-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="regUsername">
+                        <i class="fas fa-user"></i>
+                        用戶名
+                    </label>
+                    <input
+                            type="text"
+                            id="regUsername"
+                            required
+                            placeholder="請輸入用戶名"
+                            autocomplete="username"
+                            pattern="[a-zA-Z0-9_-]{3,30}"
+                    >
+                    <div class="form-error" id="regUsernameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regEmail">
                         <i class="fas fa-envelope"></i>
                         郵箱地址
                     </label>
                     <input
                             type="email"
-                            id="forgot-email"
-                            name="email"
+                            id="regEmail"
                             required
-                            placeholder="輸入您的郵箱地址"
+                            placeholder="請輸入郵箱地址"
                             autocomplete="email"
                     >
-                    <div class="form-error"></div>
+                    <div class="form-error" id="regEmailError"></div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-loading" id="forgot-btn">
-                    <span class="btn-text">發送重置鏈接</span>
-                    <span class="btn-spinner hidden">
-                            <i class="fas fa-spinner fa-spin"></i>
-                        </span>
+                <div class="form-group">
+                    <label for="regPassword">
+                        <i class="fas fa-lock"></i>
+                        密碼
+                    </label>
+                    <div class="password-input">
+                        <input
+                                type="password"
+                                id="regPassword"
+                                required
+                                placeholder="請輸入密碼（至少8位）"
+                                autocomplete="new-password"
+                                minlength="8"
+                        >
+                        <button type="button" class="password-toggle" onclick="togglePassword('regPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-error" id="regPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">
+                        <i class="fas fa-lock"></i>
+                        確認密碼
+                    </label>
+                    <div class="password-input">
+                        <input
+                                type="password"
+                                id="confirmPassword"
+                                required
+                                placeholder="請再次輸入密碼"
+                                autocomplete="new-password"
+                        >
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="form-error" id="confirmPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <span class="checkmark"></span>
+                        我同意 <a href="#" class="link">服務條款</a> 和 <a href="#" class="link">隱私政策</a>
+                    </label>
+                    <div class="form-error" id="agreeTermsError"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="registerBtn">
+                    <i class="fas fa-user-plus"></i>
+                    創建帳戶
                 </button>
-
-                <div class="auth-switch">
-                    <a href="#" id="back-to-login" class="link">
-                        <i class="fas fa-arrow-left"></i>
-                        返回登錄
-                    </a>
-                </div>
             </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="auth-footer">
+            <a href="/" class="link">
+                <i class="fas fa-arrow-left"></i>
+                返回首頁
+            </a>
         </div>
     </div>
 </div>
 
-<!-- JavaScript -->
 <script>
-    class LoginPage {
-        constructor() {
-            this.currentTheme = 'light';
-            this.isLoading = false;
-            this.init();
-        }
+    // 全域變數
+    let currentTab = 'login';
 
-        init() {
-            this.initTheme();
-            this.bindEvents();
-            this.loadStoredCredentials();
-            this.checkExistingAuth();
-        }
+    // 標籤切換
+    function showTab(tab) {
+        currentTab = tab;
 
-        checkExistingAuth() {
-            // Redirect to chat if already authenticated
-            const isAuthenticated = localStorage.getItem('isAuthenticated');
-            if (isAuthenticated === 'true') {
-                window.location.href = 'chat.html';
-            }
-        }
+        // 更新標籤樣式
+        document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+        document.getElementById('registerTab').classList.toggle('active', tab === 'register');
 
-        initTheme() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            this.setTheme(savedTheme);
-        }
+        // 顯示/隱藏表單
+        document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
 
-        setTheme(theme) {
-            this.currentTheme = theme;
-            document.body.className = `theme-${theme}`;
-            localStorage.setItem('theme', theme);
+        // 清除狀態訊息
+        hideStatusMessage();
+    }
 
-            const themeIcon = document.querySelector('#theme-toggle i');
-            if (themeIcon) {
-                themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            }
-        }
+    // 密碼可見性切換
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+        const icon = button.querySelector('i');
 
-        toggleTheme() {
-            const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
-            this.setTheme(newTheme);
-        }
-
-        bindEvents() {
-            // Theme toggle
-            document.getElementById('theme-toggle')?.addEventListener('click', () => {
-                this.toggleTheme();
-            });
-
-            // Password visibility
-            document.querySelectorAll('.password-toggle').forEach(btn => {
-                btn.addEventListener('click', this.togglePasswordVisibility);
-            });
-
-            // Form submissions
-            document.getElementById('login-form')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleLogin();
-            });
-
-            document.getElementById('forgot-password-form')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleForgotPassword();
-            });
-
-            // Navigation
-            document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showForgotPassword();
-            });
-
-            document.getElementById('back-to-login')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showLogin();
-            });
-
-            // Auto-fill validation
-            document.getElementById('identifier')?.addEventListener('input', this.validateForm.bind(this));
-            document.getElementById('password')?.addEventListener('input', this.validateForm.bind(this));
-        }
-
-        loadStoredCredentials() {
-            const savedUsername = localStorage.getItem('rememberedUsername');
-            if (savedUsername) {
-                document.getElementById('identifier').value = savedUsername;
-                document.getElementById('remember-me').checked = true;
-            }
-        }
-
-        async handleLogin() {
-            if (this.isLoading) return;
-
-            const form = document.getElementById('login-form');
-            const formData = new FormData(form);
-            const loginData = {
-                identifier: formData.get('identifier'),
-                password: formData.get('password'),
-                twoFactorToken: formData.get('twoFactorToken') || undefined
-            };
-
-            // Basic validation
-            if (!this.validateLoginData(loginData)) return;
-
-            try {
-                this.setLoading(true);
-                this.clearErrors();
-
-                // Here you would typically make an API call to your backend
-                const response = await this.simulateLogin(loginData);
-
-                // Save credentials if remember me is checked
-                if (document.getElementById('remember-me').checked) {
-                    localStorage.setItem('rememberedUsername', loginData.identifier);
-                } else {
-                    localStorage.removeItem('rememberedUsername');
-                }
-
-                this.showAlert('登錄成功！正在跳轉...', 'success');
-
-                // Store authentication state
-                localStorage.setItem('isAuthenticated', 'true');
-                localStorage.setItem('currentUser', JSON.stringify(response.user));
-
-                // Redirect to chat page
-                setTimeout(() => {
-                    window.location.href = 'chat.html';
-                }, 1500);
-
-            } catch (error) {
-                if (error.code === 'TWO_FACTOR_REQUIRED') {
-                    this.show2FAInput();
-                    this.showAlert('請輸入雙因素認證碼', 'info');
-                } else {
-                    this.showAlert(error.message || '登錄失敗，請檢查您的憑據', 'error');
-                }
-            } finally {
-                this.setLoading(false);
-            }
-        }
-
-        async simulateLogin(loginData) {
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Basic validation - you would replace this with actual API call
-            if (!loginData.identifier || !loginData.password) {
-                throw new Error('請填寫所有必需字段');
-            }
-
-            if (loginData.password.length < 6) {
-                throw new Error('密碼格式不正確');
-            }
-
-            // Create user object - this would come from your API
-            const user = {
-                id: Date.now().toString(),
-                username: loginData.identifier.includes('@') ?
-                    loginData.identifier.split('@')[0] : loginData.identifier,
-                email: loginData.identifier.includes('@') ?
-                    loginData.identifier : `${loginData.identifier}@example.com`,
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${loginData.identifier}`,
-                status: 'online'
-            };
-
-            return { success: true, user };
-        }
-
-        async handleForgotPassword() {
-            if (this.isLoading) return;
-
-            const form = document.getElementById('forgot-password-form');
-            const formData = new FormData(form);
-            const email = formData.get('email');
-
-            if (!this.validateEmail(email)) {
-                this.showFieldError(form, 'email', '請輸入有效的郵箱地址');
-                return;
-            }
-
-            try {
-                this.setLoading(true);
-                this.clearErrors();
-
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                this.showAlert('重置鏈接已發送到您的郵箱', 'success');
-                form.reset();
-
-            } catch (error) {
-                this.showAlert('發送失敗，請稍後重試', 'error');
-            } finally {
-                this.setLoading(false);
-            }
-        }
-
-        validateLoginData(data) {
-            let isValid = true;
-            const form = document.getElementById('login-form');
-
-            if (!data.identifier || data.identifier.trim().length < 3) {
-                this.showFieldError(form, 'identifier', '請輸入用戶名或郵箱');
-                isValid = false;
-            }
-
-            if (!data.password || data.password.length < 6) {
-                this.showFieldError(form, 'password', '密碼長度至少6個字符');
-                isValid = false;
-            }
-
-            return isValid;
-        }
-
-        validateEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-
-        validateForm() {
-            const identifier = document.getElementById('identifier').value;
-            const password = document.getElementById('password').value;
-            const submitBtn = document.getElementById('login-btn');
-
-            const isValid = identifier.length >= 3 && password.length >= 6;
-            submitBtn.disabled = !isValid;
-        }
-
-        show2FAInput() {
-            const twoFactorGroup = document.getElementById('two-factor-group');
-            if (twoFactorGroup) {
-                twoFactorGroup.classList.remove('hidden');
-                document.getElementById('two-factor-token')?.focus();
-            }
-        }
-
-        showForgotPassword() {
-            document.getElementById('login-form').parentElement.classList.add('hidden');
-            document.getElementById('forgot-password-section').classList.remove('hidden');
-        }
-
-        showLogin() {
-            document.getElementById('login-form').parentElement.classList.remove('hidden');
-            document.getElementById('forgot-password-section').classList.add('hidden');
-        }
-
-        togglePasswordVisibility(e) {
-            const button = e.target.closest('.password-toggle');
-            const input = button.parentElement.querySelector('input');
-            const icon = button.querySelector('i');
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fas fa-eye-slash';
-                button.setAttribute('aria-label', '隱藏密碼');
-            } else {
-                input.type = 'password';
-                icon.className = 'fas fa-eye';
-                button.setAttribute('aria-label', '顯示密碼');
-            }
-        }
-
-        setLoading(loading) {
-            this.isLoading = loading;
-            const buttons = document.querySelectorAll('.btn-loading');
-
-            buttons.forEach(button => {
-                const btnText = button.querySelector('.btn-text');
-                const btnSpinner = button.querySelector('.btn-spinner');
-
-                if (loading) {
-                    button.disabled = true;
-                    btnText.style.opacity = '0';
-                    btnSpinner.classList.remove('hidden');
-                } else {
-                    button.disabled = false;
-                    btnText.style.opacity = '1';
-                    btnSpinner.classList.add('hidden');
-                }
-            });
-        }
-
-        showAlert(message, type = 'info') {
-            const alert = document.getElementById('alert');
-            const alertMessage = document.getElementById('alert-message');
-
-            alert.className = `alert alert-${type} show`;
-            alertMessage.textContent = message;
-
-            // Auto hide after 5 seconds
-            setTimeout(() => {
-                alert.classList.remove('show');
-            }, 5000);
-        }
-
-        showFieldError(form, fieldName, message) {
-            const field = form.querySelector(`[name="${fieldName}"]`);
-            if (!field) return;
-
-            field.classList.add('error');
-            const errorDiv = field.closest('.form-group').querySelector('.form-error');
-            if (errorDiv) {
-                errorDiv.textContent = message;
-                errorDiv.classList.add('show');
-            }
-        }
-
-        clearErrors() {
-            document.querySelectorAll('.form-error').forEach(error => {
-                error.classList.remove('show');
-            });
-            document.querySelectorAll('input').forEach(input => {
-                input.classList.remove('error');
-            });
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fas fa-eye';
         }
     }
 
-    // Initialize login page
+    // 顯示狀態訊息
+    function showStatusMessage(message, type = 'error') {
+        const statusDiv = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        const icon = statusDiv.querySelector('i');
+
+        statusText.textContent = message;
+        statusDiv.className = `status-message status-${type} show`;
+
+        if (type === 'success') {
+            icon.className = 'fas fa-check-circle';
+        } else {
+            icon.className = 'fas fa-exclamation-circle';
+        }
+
+        // 自動隱藏成功訊息
+        if (type === 'success') {
+            setTimeout(hideStatusMessage, 3000);
+        }
+    }
+
+    // 隱藏狀態訊息
+    function hideStatusMessage() {
+        document.getElementById('statusMessage').classList.remove('show');
+    }
+
+    // 顯示欄位錯誤
+    function showFieldError(fieldId, message) {
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        const input = document.getElementById(fieldId);
+
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        if (input) {
+            input.classList.add('error');
+        }
+    }
+
+    // 清除欄位錯誤
+    function clearFieldError(fieldId) {
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        const input = document.getElementById(fieldId);
+
+        if (errorDiv) {
+            errorDiv.classList.remove('show');
+        }
+
+        if (input) {
+            input.classList.remove('error');
+        }
+    }
+
+    // 清除所有錯誤
+    function clearAllErrors() {
+        document.querySelectorAll('.form-error').forEach(error => {
+            error.classList.remove('show');
+        });
+
+        document.querySelectorAll('input').forEach(input => {
+            input.classList.remove('error');
+        });
+    }
+
+    // 設置按鈕載入狀態
+    function setButtonLoading(buttonId, loading) {
+        const button = document.getElementById(buttonId);
+        const icon = button.querySelector('i');
+
+        if (loading) {
+            button.disabled = true;
+            icon.className = 'fas fa-spinner fa-spin';
+            button.style.opacity = '0.7';
+        } else {
+            button.disabled = false;
+            button.style.opacity = '1';
+
+            // 恢復原始圖標
+            if (buttonId === 'loginBtn') {
+                icon.className = 'fas fa-sign-in-alt';
+            } else if (buttonId === 'registerBtn') {
+                icon.className = 'fas fa-user-plus';
+            }
+        }
+    }
+
+    // 登錄處理
+    async function handleLogin(event) {
+        event.preventDefault();
+
+        clearAllErrors();
+        hideStatusMessage();
+
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const rememberMe = document.getElementById('rememberMe').checked;
+
+        // 驗證
+        let hasError = false;
+
+        if (!username) {
+            showFieldError('loginUsername', '請輸入用戶名或郵箱');
+            hasError = true;
+        }
+
+        if (!password) {
+            showFieldError('loginPassword', '請輸入密碼');
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        setButtonLoading('loginBtn', true);
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    identifier: username,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // 保存登錄狀態
+                localStorage.setItem('isAuthenticated', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(data.data.user));
+                localStorage.setItem('authToken', data.data.token);
+
+                showStatusMessage('登錄成功！正在跳轉...', 'success');
+
+                setTimeout(() => {
+                    window.location.href = '/pages/chat.html';
+                }, 1000);
+            } else {
+                showStatusMessage(data.error || '登錄失敗，請檢查用戶名和密碼');
+            }
+
+        } catch (error) {
+            console.error('Login error:', error);
+            showStatusMessage('網路錯誤，請稍後再試');
+        } finally {
+            setButtonLoading('loginBtn', false);
+        }
+    }
+
+    // 註冊處理
+    async function handleRegister(event) {
+        event.preventDefault();
+
+        clearAllErrors();
+        hideStatusMessage();
+
+        const username = document.getElementById('regUsername').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const agreeTerms = document.getElementById('agreeTerms').checked;
+
+        // 驗證
+        let hasError = false;
+
+        if (!username) {
+            showFieldError('regUsername', '請輸入用戶名');
+            hasError = true;
+        } else if (username.length < 3) {
+            showFieldError('regUsername', '用戶名至少需要3個字符');
+            hasError = true;
+        }
+
+        if (!email) {
+            showFieldError('regEmail', '請輸入郵箱地址');
+            hasError = true;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showFieldError('regEmail', '請輸入有效的郵箱地址');
+            hasError = true;
+        }
+
+        if (!password) {
+            showFieldError('regPassword', '請輸入密碼');
+            hasError = true;
+        } else if (password.length < 8) {
+            showFieldError('regPassword', '密碼至少需要8個字符');
+            hasError = true;
+        }
+
+        if (password !== confirmPassword) {
+            showFieldError('confirmPassword', '密碼確認不匹配');
+            hasError = true;
+        }
+
+        if (!agreeTerms) {
+            showFieldError('agreeTerms', '請同意服務條款和隱私政策');
+            hasError = true;
+        }
+
+        if (hasError) return;
+
+        setButtonLoading('registerBtn', true);
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    email: email,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showStatusMessage('註冊成功！請切換到登錄頁面', 'success');
+
+                // 清空表單
+                document.getElementById('regUsername').value = '';
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                document.getElementById('agreeTerms').checked = false;
+
+                // 2秒後切換到登錄頁面並填入用戶名
+                setTimeout(() => {
+                    showTab('login');
+                    document.getElementById('loginUsername').value = username;
+                }, 2000);
+            } else {
+                showStatusMessage(data.error || '註冊失敗，請檢查輸入信息');
+            }
+
+        } catch (error) {
+            console.error('Register error:', error);
+            showStatusMessage('網路錯誤，請稍後再試');
+        } finally {
+            setButtonLoading('registerBtn', false);
+        }
+    }
+
+    // 忘記密碼
+    function showForgotPassword() {
+        const email = prompt('請輸入您的註冊郵箱地址：');
+        if (email) {
+            showStatusMessage('重置鏈接已發送到您的郵箱（功能開發中）', 'success');
+        }
+    }
+
+    // 頁面載入時檢查認證狀態
     document.addEventListener('DOMContentLoaded', () => {
-        new LoginPage();
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        if (isAuthenticated === 'true') {
+            window.location.href = '/pages/chat.html';
+        }
+    });
+
+    // 清除輸入錯誤狀態
+    document.addEventListener('input', (e) => {
+        if (e.target.tagName === 'INPUT') {
+            clearFieldError(e.target.id);
+        }
     });
 </script>
 </body>
