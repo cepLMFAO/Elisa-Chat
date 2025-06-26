@@ -1,7 +1,6 @@
+const database = require('../config/database');
 const logger = require('../utils/logger');
-const Room = require('../models/room');
-const RoomMember = require('../models/roomMember');
-const { WS_EVENTS, ERROR_CODES, ROOM_ROLES } = require('../utils/constants');
+const { WS_EVENTS } = require('../config/constants');
 
 class RoomHandler {
     constructor(io, socketHandler) {
@@ -14,38 +13,41 @@ class RoomHandler {
         try {
             const { roomId } = data;
             const userId = socket.userId;
-            const user = socket.user;
 
-            logger.websocket('用戶嘗試加入房間', userId, { roomId });
-
-            // 驗證房間是否存在
-            const room = await Room.findByUuid(roomId);
-            if (!room) {
+            if (!roomId) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ROOM_NOT_FOUND,
-                    message: '房間不存在'
+                    message: '房間ID是必需的',
+                    code: 'ROOM_ID_REQUIRED'
                 });
                 return;
             }
 
-            // 檢查用戶是否為房間成員
-            const membership = await RoomMember.findByRoomAndUser(roomId, userId);
-            if (!membership) {
-                // 檢查是否為公開房間
-                if (room.type === 'private' || room.is_private) {
-                    socket.emit(WS_EVENTS.ERROR, {
-                        code: ERROR_CODES.ROOM_PRIVATE,
-                        message: '無權限加入私人房間'
-                    });
-                    return;
-                }
+            // 檢查房間是否存在
+            const room = await database.get(
+                'SELECT * FROM rooms WHERE uuid = ?',
+                [roomId]
+            );
 
-                // 自動加入公開房間
-                await RoomMember.create({
-                    roomUuid: roomId,
-                    userUuid: userId,
-                    role: ROOM_ROLES.MEMBER
+            if (!room) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '房間不存在',
+                    code: 'ROOM_NOT_FOUND'
                 });
+                return;
+            }
+
+            // 檢查用戶是否是房間成員
+            const membership = await database.get(
+                'SELECT * FROM room_members WHERE room_uuid = ? AND user_uuid = ?',
+                [roomId, userId]
+            );
+
+            if (!membership && room.type !== 'public') {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '無權限加入此房間',
+                    code: 'ACCESS_DENIED'
+                });
+                return;
             }
 
             // 加入 Socket.IO 房間
@@ -54,50 +56,53 @@ class RoomHandler {
             // 記錄房間用戶
             this.socketHandler.addUserToRoom(roomId, userId);
 
-            // 發送加入成功事件
-            socket.emit(WS_EVENTS.JOIN_ROOM, {
+            // 更新最後活動時間
+            if (membership) {
+                await database.run(
+                    'UPDATE room_members SET last_activity = CURRENT_TIMESTAMP WHERE room_uuid = ? AND user_uuid = ?',
+                    [roomId, userId]
+                );
+            }
+
+            // 獲取用戶信息
+            const user = await database.get(
+                'SELECT uuid, username, avatar FROM users WHERE uuid = ?',
+                [userId]
+            );
+
+            // 通知房間內其他成員
+            socket.to(`room:${roomId}`).emit(WS_EVENTS.USER_ONLINE, {
                 roomId,
-                room: await room.toJSON(userId),
+                user: {
+                    id: user.uuid,
+                    username: user.username,
+                    avatar: user.avatar
+                },
                 timestamp: new Date().toISOString()
             });
 
-            // 通知房間其他成員
-            socket.to(`room:${roomId}`).emit(WS_EVENTS.USER_JOIN_ROOM, {
-                userId,
-                username: user.username,
-                displayName: user.displayName,
-                avatar: user.avatar,
+            // 確認加入成功
+            socket.emit('room_joined', {
                 roomId,
+                roomName: room.name,
                 timestamp: new Date().toISOString()
             });
 
-            // 獲取房間最近訊息
-            const messages = await this.getRecentMessages(roomId, 50);
-            socket.emit('room:messages', {
+            logger.websocket('User joined room', userId, {
                 roomId,
-                messages,
-                hasMore: messages.length === 50
+                roomName: room.name
             });
-
-            // 獲取在線成員列表
-            const onlineMembers = await this.getOnlineMembers(roomId);
-            socket.emit('room:members', {
-                roomId,
-                members: onlineMembers
-            });
-
-            logger.websocket('用戶成功加入房間', userId, { roomId });
 
         } catch (error) {
-            logger.error('加入房間失敗', {
+            logger.error('Failed to handle join room', {
                 error: error.message,
-                userId: socket.userId,
-                roomId: data.roomId
+                roomId: data.roomId,
+                userId: socket.userId
             });
 
             socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '加入房間失敗'
+                message: '加入房間失敗',
+                code: 'JOIN_ROOM_FAILED'
             });
         }
     }
@@ -107,297 +112,260 @@ class RoomHandler {
         try {
             const { roomId } = data;
             const userId = socket.userId;
-            const user = socket.user;
 
-            logger.websocket('用戶離開房間', userId, { roomId });
+            if (!roomId) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '房間ID是必需的',
+                    code: 'ROOM_ID_REQUIRED'
+                });
+                return;
+            }
 
             // 離開 Socket.IO 房間
             socket.leave(`room:${roomId}`);
 
-            // 從房間用戶列表移除
+            // 從房間用戶記錄中移除
             this.socketHandler.removeUserFromRoom(roomId, userId);
 
-            // 發送離開確認
-            socket.emit(WS_EVENTS.LEAVE_ROOM, {
+            // 獲取用戶信息
+            const user = await database.get(
+                'SELECT uuid, username, avatar FROM users WHERE uuid = ?',
+                [userId]
+            );
+
+            // 通知房間內其他成員
+            socket.to(`room:${roomId}`).emit(WS_EVENTS.USER_OFFLINE, {
+                roomId,
+                user: {
+                    id: user.uuid,
+                    username: user.username,
+                    avatar: user.avatar
+                },
+                timestamp: new Date().toISOString()
+            });
+
+            // 確認離開成功
+            socket.emit('room_left', {
                 roomId,
                 timestamp: new Date().toISOString()
             });
 
-            // 通知房間其他成員
-            socket.to(`room:${roomId}`).emit(WS_EVENTS.USER_LEAVE_ROOM, {
-                userId,
-                username: user.username,
-                roomId,
-                timestamp: new Date().toISOString()
+            logger.websocket('User left room', userId, {
+                roomId
             });
 
         } catch (error) {
-            logger.error('離開房間失敗', {
+            logger.error('Failed to handle leave room', {
                 error: error.message,
-                userId: socket.userId,
-                roomId: data.roomId
+                roomId: data.roomId,
+                userId: socket.userId
+            });
+
+            socket.emit(WS_EVENTS.ERROR, {
+                message: '離開房間失敗',
+                code: 'LEAVE_ROOM_FAILED'
             });
         }
     }
 
-    // 處理房間設置更新
-    async handleRoomUpdate(socket, data) {
+    // 處理創建房間
+    async handleCreateRoom(socket, data) {
         try {
-            const { roomId, updates } = data;
+            const { name, description, type = 'private', password } = data;
             const userId = socket.userId;
 
-            // 檢查權限
-            const membership = await RoomMember.findByRoomAndUser(roomId, userId);
+            // 基本驗證
+            if (!name || name.trim().length === 0) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '房間名稱是必需的',
+                    code: 'ROOM_NAME_REQUIRED'
+                });
+                return;
+            }
+
+            // 這裡應該調用 Room 模型的創建方法
+            // 由於沒有 Room 模型，我們直接操作數據庫
+            const { v4: uuidv4 } = require('uuid');
+            const roomUuid = uuidv4();
+
+            // 創建房間
+            await database.run(
+                `INSERT INTO rooms (uuid, name, description, type, password, created_by, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [roomUuid, name.trim(), description || '', type, password || null, userId]
+            );
+
+            // 將創建者添加為管理員
+            await database.run(
+                `INSERT INTO room_members (room_uuid, user_uuid, role, joined_at)
+                 VALUES (?, ?, 'owner', CURRENT_TIMESTAMP)`,
+                [roomUuid, userId]
+            );
+
+            // 發送房間創建成功事件
+            socket.emit(WS_EVENTS.ROOM_CREATED, {
+                room: {
+                    id: roomUuid,
+                    name: name.trim(),
+                    description: description || '',
+                    type,
+                    createdBy: userId
+                },
+                timestamp: new Date().toISOString()
+            });
+
+            logger.websocket('Room created', userId, {
+                roomId: roomUuid,
+                roomName: name.trim(),
+                roomType: type
+            });
+
+        } catch (error) {
+            logger.error('Failed to create room', {
+                error: error.message,
+                userId: socket.userId,
+                roomData: data
+            });
+
+            socket.emit(WS_EVENTS.ERROR, {
+                message: '創建房間失敗',
+                code: 'CREATE_ROOM_FAILED'
+            });
+        }
+    }
+
+    // 處理房間邀請
+    async handleRoomInvite(socket, data) {
+        try {
+            const { roomId, targetUserId, message } = data;
+            const inviterUserId = socket.userId;
+
+            // 檢查房間和權限
+            const membership = await database.get(
+                'SELECT role FROM room_members WHERE room_uuid = ? AND user_uuid = ?',
+                [roomId, inviterUserId]
+            );
+
             if (!membership || !['owner', 'admin'].includes(membership.role)) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '無權限修改房間設置'
+                    message: '無權限邀請用戶',
+                    code: 'INSUFFICIENT_PERMISSIONS'
                 });
                 return;
             }
 
-            // 更新房間信息
-            const room = await Room.findByUuid(roomId);
-            if (!room) {
+            // 檢查目標用戶是否已經是成員
+            const existingMember = await database.get(
+                'SELECT * FROM room_members WHERE room_uuid = ? AND user_uuid = ?',
+                [roomId, targetUserId]
+            );
+
+            if (existingMember) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ROOM_NOT_FOUND,
-                    message: '房間不存在'
+                    message: '用戶已經是房間成員',
+                    code: 'USER_ALREADY_MEMBER'
                 });
                 return;
             }
 
-            await room.update(updates);
+            // 獲取房間和邀請者信息
+            const room = await database.get('SELECT name FROM rooms WHERE uuid = ?', [roomId]);
+            const inviter = await database.get('SELECT username FROM users WHERE uuid = ?', [inviterUserId]);
 
-            // 廣播房間更新
-            this.io.to(`room:${roomId}`).emit(WS_EVENTS.ROOM_UPDATED, {
+            // 發送邀請通知給目標用戶
+            this.io.to(`user:${targetUserId}`).emit('room_invitation', {
                 roomId,
-                updates,
-                updatedBy: userId,
+                roomName: room.name,
+                inviterName: inviter.username,
+                message: message || `${inviter.username} 邀請您加入房間 "${room.name}"`,
                 timestamp: new Date().toISOString()
             });
 
-            logger.websocket('房間信息已更新', userId, { roomId, updates });
+            socket.emit('invitation_sent', {
+                roomId,
+                targetUserId,
+                timestamp: new Date().toISOString()
+            });
+
+            logger.websocket('Room invitation sent', inviterUserId, {
+                roomId,
+                targetUserId,
+                roomName: room.name
+            });
 
         } catch (error) {
-            logger.error('更新房間失敗', {
+            logger.error('Failed to send room invitation', {
                 error: error.message,
                 userId: socket.userId,
-                roomId: data.roomId
+                inviteData: data
             });
 
             socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '更新房間失敗'
+                message: '發送邀請失敗',
+                code: 'INVITE_FAILED'
             });
         }
     }
 
-    // 處理邀請用戶
-    async handleInviteUser(socket, data) {
+    // 獲取房間在線用戶
+    async handleGetRoomUsers(socket, data) {
         try {
-            const { roomId, userIds } = data;
-            const inviterId = socket.userId;
+            const { roomId } = data;
+            const userId = socket.userId;
 
-            // 檢查邀請權限
-            const membership = await RoomMember.findByRoomAndUser(roomId, inviterId);
+            // 檢查用戶是否有權限查看房間成員
+            const membership = await database.get(
+                'SELECT * FROM room_members WHERE room_uuid = ? AND user_uuid = ?',
+                [roomId, userId]
+            );
+
             if (!membership) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.NOT_ROOM_MEMBER,
-                    message: '您不是房間成員'
+                    message: '無權限查看房間成員',
+                    code: 'ACCESS_DENIED'
                 });
                 return;
             }
 
-            const room = await Room.findByUuid(roomId);
-            if (!room) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ROOM_NOT_FOUND,
-                    message: '房間不存在'
-                });
-                return;
-            }
+            // 獲取房間所有成員
+            const members = await database.query(
+                `SELECT u.uuid, u.username, u.avatar, u.status, rm.role, rm.joined_at
+                 FROM room_members rm
+                 JOIN users u ON rm.user_uuid = u.uuid
+                 WHERE rm.room_uuid = ?
+                 ORDER BY rm.joined_at`,
+                [roomId]
+            );
 
-            // 批量邀請用戶
-            const inviteResults = [];
-            for (const userId of userIds) {
-                try {
-                    // 檢查用戶是否已經是成員
-                    const existingMember = await RoomMember.findByRoomAndUser(roomId, userId);
-                    if (existingMember) {
-                        inviteResults.push({
-                            userId,
-                            status: 'already_member',
-                            message: '用戶已是房間成員'
-                        });
-                        continue;
-                    }
+            // 獲取在線成員
+            const onlineUsers = this.socketHandler.getRoomUsers(roomId);
 
-                    // 添加為房間成員
-                    await RoomMember.create({
-                        roomUuid: roomId,
-                        userUuid: userId,
-                        role: ROOM_ROLES.MEMBER
-                    });
+            const roomUsers = members.map(member => ({
+                id: member.uuid,
+                username: member.username,
+                avatar: member.avatar,
+                role: member.role,
+                joinedAt: member.joined_at,
+                isOnline: onlineUsers.has(member.uuid)
+            }));
 
-                    // 發送邀請通知
-                    this.io.to(`user:${userId}`).emit(WS_EVENTS.ROOM_INVITE, {
-                        roomId,
-                        roomName: room.name,
-                        inviterId,
-                        inviterName: socket.user.username,
-                        timestamp: new Date().toISOString()
-                    });
-
-                    inviteResults.push({
-                        userId,
-                        status: 'invited',
-                        message: '邀請成功'
-                    });
-
-                } catch (error) {
-                    inviteResults.push({
-                        userId,
-                        status: 'error',
-                        message: error.message
-                    });
-                }
-            }
-
-            socket.emit('room:invite_results', {
+            socket.emit('room_users', {
                 roomId,
-                results: inviteResults
-            });
-
-        } catch (error) {
-            logger.error('邀請用戶失敗', {
-                error: error.message,
-                userId: socket.userId,
-                roomId: data.roomId
-            });
-
-            socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '邀請用戶失敗'
-            });
-        }
-    }
-
-    // 處理踢出用戶
-    async handleKickUser(socket, data) {
-        try {
-            const { roomId, targetUserId, reason } = data;
-            const operatorId = socket.userId;
-
-            // 檢查操作權限
-            const operatorMembership = await RoomMember.findByRoomAndUser(roomId, operatorId);
-            const targetMembership = await RoomMember.findByRoomAndUser(roomId, targetUserId);
-
-            if (!operatorMembership || !['owner', 'admin', 'moderator'].includes(operatorMembership.role)) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '無權限踢出用戶'
-                });
-                return;
-            }
-
-            if (!targetMembership) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.USER_NOT_FOUND,
-                    message: '目標用戶不在房間中'
-                });
-                return;
-            }
-
-            // 權限等級檢查
-            const roleHierarchy = { owner: 3, admin: 2, moderator: 1, member: 0 };
-            if (roleHierarchy[targetMembership.role] >= roleHierarchy[operatorMembership.role]) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '無法踢出同等或更高權限的用戶'
-                });
-                return;
-            }
-
-            // 移除用戶成員資格
-            await targetMembership.delete();
-
-            // 強制目標用戶離開房間
-            this.io.to(`user:${targetUserId}`).emit('room:kicked', {
-                roomId,
-                reason,
-                operatorId,
+                users: roomUsers,
                 timestamp: new Date().toISOString()
             });
 
-            // 通知房間成員
-            this.io.to(`room:${roomId}`).emit('room:user_kicked', {
-                roomId,
-                targetUserId,
-                operatorId,
-                reason,
-                timestamp: new Date().toISOString()
-            });
-
-            logger.websocket('用戶被踢出房間', operatorId, {
-                roomId,
-                targetUserId,
-                reason
-            });
-
         } catch (error) {
-            logger.error('踢出用戶失敗', {
+            logger.error('Failed to get room users', {
                 error: error.message,
-                userId: socket.userId,
-                roomId: data.roomId
+                roomId: data.roomId,
+                userId: socket.userId
             });
 
             socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '踢出用戶失敗'
+                message: '獲取房間成員失敗',
+                code: 'GET_ROOM_USERS_FAILED'
             });
-        }
-    }
-
-    // 獲取房間最近訊息
-    async getRecentMessages(roomId, limit = 50) {
-        try {
-            const database = require('../config/database');
-            const messages = await database.query(`
-                SELECT m.*, u.username, u.display_name, u.avatar,
-                       COUNT(mr.id) as reaction_count
-                FROM messages m
-                LEFT JOIN users u ON m.sender_uuid = u.uuid
-                LEFT JOIN message_reactions mr ON m.uuid = mr.message_uuid
-                WHERE m.room_uuid = ? AND m.deleted_at IS NULL
-                GROUP BY m.uuid
-                ORDER BY m.created_at DESC
-                LIMIT ?
-            `, [roomId, limit]);
-
-            return messages.reverse(); // 返回時間順序
-        } catch (error) {
-            logger.error('獲取房間訊息失敗', { roomId, error: error.message });
-            return [];
-        }
-    }
-
-    // 獲取在線成員
-    async getOnlineMembers(roomId) {
-        try {
-            const database = require('../config/database');
-            const members = await database.query(`
-                SELECT u.uuid, u.username, u.display_name, u.avatar, u.status,
-                       rm.role, rm.joined_at
-                FROM room_members rm
-                JOIN users u ON rm.user_uuid = u.uuid
-                WHERE rm.room_uuid = ?
-                ORDER BY rm.role DESC, u.username ASC
-            `, [roomId]);
-
-            return members;
-        } catch (error) {
-            logger.error('獲取房間成員失敗', { roomId, error: error.message });
-            return [];
         }
     }
 }

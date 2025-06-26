@@ -7,7 +7,6 @@ const compression = require('compression');
 const path = require('path');
 const fs = require('fs').promises;
 
-// 導入配置和中間件
 const config = require('./config/constants');
 const database = require('./config/database');
 const logger = require('./utils/logger');
@@ -15,7 +14,6 @@ const AuthMiddleware = require('./middleware/auth');
 const RateLimitMiddleware = require('./middleware/rateLimit');
 const ValidationMiddleware = require('./middleware/validation');
 
-// 導入路由
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const roomRoutes = require('./routes/rooms');
@@ -246,7 +244,7 @@ class ChatServer {
 }
 
 // WebSocket 事件處理器
-class sockethandler {
+class socketHandler {
     constructor(io) {
         this.io = io;
         this.onlineUsers = new Map();

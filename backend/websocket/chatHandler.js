@@ -1,10 +1,6 @@
+const database = require('../config/database');
 const logger = require('../utils/logger');
-const Message = require('../models/Message');
-const Room = require('../models/room');
-const RoomMember = require('../models/roomMember');
-const File = require('../models/files');
-const { WS_EVENTS, ERROR_CODES, MESSAGE_TYPES } = require('../utils/constants');
-const { v4: uuidv4 } = require('uuid');
+const { WS_EVENTS } = require('../config/constants');
 
 class ChatHandler {
     constructor(io, socketHandler) {
@@ -12,503 +8,445 @@ class ChatHandler {
         this.socketHandler = socketHandler;
     }
 
-    // 處理發送訊息
+    // 處理發送消息
     async handleMessage(socket, data) {
         try {
-            const { roomId, content, messageType = MESSAGE_TYPES.TEXT, replyTo, files } = data;
-            const senderId = socket.userId;
-            const sender = socket.user;
+            const { roomId, content, type = 'text', replyTo = null } = data;
+            const userId = socket.userId;
 
-            logger.websocket('用戶發送訊息', senderId, {
-                roomId,
-                messageType,
-                contentLength: content ? content.length : 0
-            });
-
-            // 驗證房間存在
-            const room = await Room.findByUuid(roomId);
-            if (!room) {
+            if (!roomId || !content) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ROOM_NOT_FOUND,
-                    message: '房間不存在'
+                    message: '房間ID和消息內容是必需的',
+                    code: 'INVALID_MESSAGE_DATA'
                 });
                 return;
             }
 
-            // 檢查用戶是否為房間成員
-            const membership = await RoomMember.findByRoomAndUser(roomId, senderId);
+            // 檢查用戶是否是房間成員
+            const membership = await database.get(
+                'SELECT * FROM room_members WHERE room_uuid = ? AND user_uuid = ?',
+                [roomId, userId]
+            );
+
             if (!membership) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.NOT_ROOM_MEMBER,
-                    message: '您不是房間成員'
+                    message: '您不是此房間的成員',
+                    code: 'NOT_ROOM_MEMBER'
                 });
                 return;
             }
 
-            // 檢查用戶是否被禁言
-            if (membership.muted_until && new Date(membership.muted_until) > new Date()) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '您已被禁言'
-                });
-                return;
-            }
-
-            // 創建訊息
+            // 創建消息
+            const { v4: uuidv4 } = require('uuid');
             const messageUuid = uuidv4();
+
+            await database.run(
+                `INSERT INTO messages (uuid, room_uuid, user_uuid, content, type, reply_to, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [messageUuid, roomId, userId, content, type, replyTo]
+            );
+
+            // 獲取完整消息信息
+            const message = await database.get(
+                `SELECT m.*, u.username, u.avatar
+                 FROM messages m
+                 JOIN users u ON m.user_uuid = u.uuid
+                 WHERE m.uuid = ?`,
+                [messageUuid]
+            );
+
             const messageData = {
-                uuid: messageUuid,
-                roomUuid: roomId,
-                senderUuid: senderId,
-                content: content || '',
-                messageType,
-                replyTo: replyTo || null,
-                metadata: JSON.stringify({
-                    files: files || [],
-                    edited: false
-                })
-            };
-
-            const message = await Message.create(messageData);
-
-            // 處理文件附件
-            if (files && files.length > 0) {
-                await this.handleMessageFiles(messageUuid, files);
-            }
-
-            // 構建完整訊息對象
-            const fullMessage = {
-                uuid: messageUuid,
-                roomId,
+                id: message.uuid,
+                roomId: message.room_uuid,
+                content: message.content,
+                type: message.type,
+                replyTo: message.reply_to,
                 sender: {
-                    uuid: senderId,
-                    username: sender.username,
-                    displayName: sender.displayName,
-                    avatar: sender.avatar
+                    id: message.user_uuid,
+                    username: message.username,
+                    avatar: message.avatar
                 },
-                content,
-                messageType,
-                replyTo,
-                files: files || [],
-                timestamp: new Date().toISOString(),
-                edited: false,
-                reactions: []
+                timestamp: message.created_at,
+                editedAt: message.updated_at !== message.created_at ? message.updated_at : null
             };
 
-            // 廣播訊息給房間所有成員
-            this.io.to(`room:${roomId}`).emit(WS_EVENTS.MESSAGE_SENT, fullMessage);
-
-            // 發送確認給發送者
-            socket.emit(WS_EVENTS.MESSAGE_RECEIVED, {
-                messageId: messageUuid,
-                timestamp: fullMessage.timestamp
-            });
+            // 廣播消息到房間內所有成員
+            this.io.to(`room:${roomId}`).emit(WS_EVENTS.MESSAGE, messageData);
 
             // 更新房間最後活動時間
-            await room.updateLastActivity();
+            await database.run(
+                'UPDATE rooms SET last_activity = CURRENT_TIMESTAMP WHERE uuid = ?',
+                [roomId]
+            );
 
-            logger.websocket('訊息發送成功', senderId, {
+            logger.websocket('Message sent', userId, {
                 messageId: messageUuid,
-                roomId
+                roomId,
+                messageType: type
             });
 
         } catch (error) {
-            logger.error('發送訊息失敗', {
+            logger.error('Failed to handle message', {
                 error: error.message,
                 userId: socket.userId,
-                roomId: data.roomId
+                messageData: data
             });
 
             socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '發送訊息失敗'
+                message: '發送消息失敗',
+                code: 'SEND_MESSAGE_FAILED'
             });
         }
     }
 
-    // 處理私人訊息
+    // 處理私人消息
     async handlePrivateMessage(socket, data) {
         try {
-            const { receiverId, content, messageType = MESSAGE_TYPES.TEXT, files } = data;
-            const senderId = socket.userId;
-            const sender = socket.user;
+            const { targetUserId, content, type = 'text' } = data;
+            const senderUserId = socket.userId;
 
-            logger.websocket('用戶發送私人訊息', senderId, { receiverId });
-
-            // 檢查接收者是否存在
-            const User = require('../models/User');
-            const receiver = await User.findByUuid(receiverId);
-            if (!receiver) {
+            if (!targetUserId || !content) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.USER_NOT_FOUND,
-                    message: '接收者不存在'
+                    message: '目標用戶ID和消息內容是必需的',
+                    code: 'INVALID_PRIVATE_MESSAGE_DATA'
                 });
                 return;
             }
 
-            // 檢查是否被對方封鎖
-            const isBlocked = await this.checkIfBlocked(senderId, receiverId);
-            if (isBlocked) {
+            // 檢查目標用戶是否存在
+            const targetUser = await database.get(
+                'SELECT uuid, username, avatar FROM users WHERE uuid = ?',
+                [targetUserId]
+            );
+
+            if (!targetUser) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.USER_BLOCKED,
-                    message: '無法發送訊息給此用戶'
+                    message: '目標用戶不存在',
+                    code: 'TARGET_USER_NOT_FOUND'
                 });
                 return;
             }
 
-            // 創建私人訊息
+            // 創建或獲取私人聊天房間
+            let privateRoom = await database.get(
+                `SELECT uuid FROM rooms 
+                 WHERE type = 'direct' 
+                 AND uuid IN (
+                     SELECT room_uuid FROM room_members 
+                     WHERE user_uuid = ? 
+                     INTERSECT 
+                     SELECT room_uuid FROM room_members 
+                     WHERE user_uuid = ?
+                 )`,
+                [senderUserId, targetUserId]
+            );
+
+            if (!privateRoom) {
+                // 創建新的私人聊天房間
+                const { v4: uuidv4 } = require('uuid');
+                const roomUuid = uuidv4();
+
+                await database.run(
+                    `INSERT INTO rooms (uuid, name, type, created_by, created_at, updated_at)
+                     VALUES (?, ?, 'direct', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                    [roomUuid, `${socket.user.username} & ${targetUser.username}`, senderUserId]
+                );
+
+                // 添加兩個用戶為房間成員
+                await database.run(
+                    `INSERT INTO room_members (room_uuid, user_uuid, role, joined_at)
+                     VALUES (?, ?, 'member', CURRENT_TIMESTAMP), (?, ?, 'member', CURRENT_TIMESTAMP)`,
+                    [roomUuid, senderUserId, roomUuid, targetUserId]
+                );
+
+                privateRoom = { uuid: roomUuid };
+            }
+
+            // 創建消息
+            const { v4: uuidv4 } = require('uuid');
             const messageUuid = uuidv4();
+
+            await database.run(
+                `INSERT INTO messages (uuid, room_uuid, user_uuid, content, type, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                [messageUuid, privateRoom.uuid, senderUserId, content, type]
+            );
+
             const messageData = {
-                uuid: messageUuid,
-                senderUuid: senderId,
-                receiverUuid: receiverId,
-                content: content || '',
-                messageType,
-                metadata: JSON.stringify({
-                    files: files || [],
-                    private: true
-                })
-            };
-
-            await Message.create(messageData);
-
-            // 處理文件附件
-            if (files && files.length > 0) {
-                await this.handleMessageFiles(messageUuid, files);
-            }
-
-            // 構建訊息對象
-            const privateMessage = {
-                uuid: messageUuid,
+                id: messageUuid,
+                roomId: privateRoom.uuid,
+                content: content,
+                type: type,
                 sender: {
-                    uuid: senderId,
-                    username: sender.username,
-                    displayName: sender.displayName,
-                    avatar: sender.avatar
+                    id: senderUserId,
+                    username: socket.user.username,
+                    avatar: socket.user.avatar
                 },
-                receiver: {
-                    uuid: receiverId,
-                    username: receiver.username,
-                    displayName: receiver.displayName
-                },
-                content,
-                messageType,
-                files: files || [],
                 timestamp: new Date().toISOString(),
-                private: true
+                isPrivate: true
             };
 
-            // 發送給接收者
-            this.io.to(`user:${receiverId}`).emit(WS_EVENTS.PRIVATE_MESSAGE, privateMessage);
+            // 發送給發送者和接收者
+            socket.emit(WS_EVENTS.PRIVATE_MESSAGE, messageData);
+            this.io.to(`user:${targetUserId}`).emit(WS_EVENTS.PRIVATE_MESSAGE, messageData);
 
-            // 發送確認給發送者
-            socket.emit(WS_EVENTS.MESSAGE_RECEIVED, {
+            logger.websocket('Private message sent', senderUserId, {
                 messageId: messageUuid,
-                timestamp: privateMessage.timestamp
-            });
-
-            logger.websocket('私人訊息發送成功', senderId, {
-                messageId: messageUuid,
-                receiverId
+                targetUserId,
+                messageType: type
             });
 
         } catch (error) {
-            logger.error('發送私人訊息失敗', {
-                error: error.message,
-                senderId: socket.userId,
-                receiverId: data.receiverId
-            });
-
-            socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '發送私人訊息失敗'
-            });
-        }
-    }
-
-    // 處理訊息編輯
-    async handleMessageEdit(socket, data) {
-        try {
-            const { messageId, newContent } = data;
-            const userId = socket.userId;
-
-            // 查找訊息
-            const message = await Message.findByUuid(messageId);
-            if (!message) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.MESSAGE_NOT_FOUND,
-                    message: '訊息不存在'
-                });
-                return;
-            }
-
-            // 檢查是否為訊息發送者
-            if (message.senderUuid !== userId) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '只能編輯自己的訊息'
-                });
-                return;
-            }
-
-            // 檢查訊息是否過期（5分鐘內可編輯）
-            const messageAge = Date.now() - new Date(message.createdAt).getTime();
-            if (messageAge > 5 * 60 * 1000) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '訊息編輯時間已過期'
-                });
-                return;
-            }
-
-            // 更新訊息
-            await message.edit(newContent);
-
-            // 構建編輯事件
-            const editEvent = {
-                messageId,
-                newContent,
-                editedAt: new Date().toISOString(),
-                editedBy: userId
-            };
-
-            // 廣播編輯事件
-            if (message.roomUuid) {
-                this.io.to(`room:${message.roomUuid}`).emit(WS_EVENTS.MESSAGE_EDITED, editEvent);
-            } else if (message.receiverUuid) {
-                this.io.to(`user:${message.receiverUuid}`).emit(WS_EVENTS.MESSAGE_EDITED, editEvent);
-                socket.emit(WS_EVENTS.MESSAGE_EDITED, editEvent);
-            }
-
-            logger.websocket('訊息編輯成功', userId, { messageId });
-
-        } catch (error) {
-            logger.error('編輯訊息失敗', {
+            logger.error('Failed to handle private message', {
                 error: error.message,
                 userId: socket.userId,
-                messageId: data.messageId
+                messageData: data
             });
 
             socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '編輯訊息失敗'
+                message: '發送私人消息失敗',
+                code: 'SEND_PRIVATE_MESSAGE_FAILED'
             });
         }
     }
 
-    // 處理訊息刪除
-    async handleMessageDelete(socket, data) {
-        try {
-            const { messageId } = data;
-            const userId = socket.userId;
-
-            // 查找訊息
-            const message = await Message.findByUuid(messageId);
-            if (!message) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.MESSAGE_NOT_FOUND,
-                    message: '訊息不存在'
-                });
-                return;
-            }
-
-            // 檢查刪除權限
-            let canDelete = false;
-
-            if (message.senderUuid === userId) {
-                // 發送者可以刪除自己的訊息
-                canDelete = true;
-            } else if (message.roomUuid) {
-                // 房間管理員可以刪除房間訊息
-                const membership = await RoomMember.findByRoomAndUser(message.roomUuid, userId);
-                if (membership && ['owner', 'admin', 'moderator'].includes(membership.role)) {
-                    canDelete = true;
-                }
-            }
-
-            if (!canDelete) {
-                socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '無權限刪除此訊息'
-                });
-                return;
-            }
-
-            // 刪除訊息
-            await message.delete();
-
-            // 構建刪除事件
-            const deleteEvent = {
-                messageId,
-                deletedAt: new Date().toISOString(),
-                deletedBy: userId
-            };
-
-            // 廣播刪除事件
-            if (message.roomUuid) {
-                this.io.to(`room:${message.roomUuid}`).emit(WS_EVENTS.MESSAGE_DELETED, deleteEvent);
-            } else if (message.receiverUuid) {
-                this.io.to(`user:${message.receiverUuid}`).emit(WS_EVENTS.MESSAGE_DELETED, deleteEvent);
-                socket.emit(WS_EVENTS.MESSAGE_DELETED, deleteEvent);
-            }
-
-            logger.websocket('訊息刪除成功', userId, { messageId });
-
-        } catch (error) {
-            logger.error('刪除訊息失敗', {
-                error: error.message,
-                userId: socket.userId,
-                messageId: data.messageId
-            });
-
-            socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '刪除訊息失敗'
-            });
-        }
-    }
-
-    // 處理訊息反應
+    // 處理消息反應
     async handleMessageReaction(socket, data) {
         try {
-            const { messageId, emoji, action = 'add' } = data; // action: 'add' | 'remove'
+            const { messageId, emoji, action = 'add' } = data;
             const userId = socket.userId;
 
-            // 查找訊息
-            const message = await Message.findByUuid(messageId);
+            if (!messageId || !emoji) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '消息ID和表情符號是必需的',
+                    code: 'INVALID_REACTION_DATA'
+                });
+                return;
+            }
+
+            // 獲取消息信息
+            const message = await database.get(
+                'SELECT room_uuid FROM messages WHERE uuid = ?',
+                [messageId]
+            );
+
             if (!message) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.MESSAGE_NOT_FOUND,
-                    message: '訊息不存在'
+                    message: '消息不存在',
+                    code: 'MESSAGE_NOT_FOUND'
                 });
                 return;
             }
 
-            // 檢查用戶是否能看到此訊息
-            const canAccess = await this.checkMessageAccess(userId, message);
-            if (!canAccess) {
+            // 檢查用戶是否有權限對此消息做反應
+            const membership = await database.get(
+                'SELECT * FROM room_members WHERE room_uuid = ? AND user_uuid = ?',
+                [message.room_uuid, userId]
+            );
+
+            if (!membership) {
                 socket.emit(WS_EVENTS.ERROR, {
-                    code: ERROR_CODES.ACCESS_DENIED,
-                    message: '無權限訪問此訊息'
+                    message: '無權限對此消息做反應',
+                    code: 'NO_REACTION_PERMISSION'
                 });
                 return;
             }
-
-            // 處理反應
-            const database = require('../config/database');
 
             if (action === 'add') {
                 // 添加反應
-                await database.run(`
-                    INSERT OR IGNORE INTO message_reactions 
-                    (message_uuid, user_uuid, emoji) 
-                    VALUES (?, ?, ?)
-                `, [messageId, userId, emoji]);
-            } else {
+                await database.run(
+                    `INSERT OR REPLACE INTO message_reactions (message_uuid, user_uuid, emoji, created_at)
+                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
+                    [messageId, userId, emoji]
+                );
+            } else if (action === 'remove') {
                 // 移除反應
-                await database.run(`
-                    DELETE FROM message_reactions 
-                    WHERE message_uuid = ? AND user_uuid = ? AND emoji = ?
-                `, [messageId, userId, emoji]);
+                await database.run(
+                    'DELETE FROM message_reactions WHERE message_uuid = ? AND user_uuid = ? AND emoji = ?',
+                    [messageId, userId, emoji]
+                );
             }
 
-            // 獲取更新後的反應統計
-            const reactions = await database.query(`
-                SELECT emoji, COUNT(*) as count, 
-                       GROUP_CONCAT(u.username) as users
-                FROM message_reactions mr
-                JOIN users u ON mr.user_uuid = u.uuid
-                WHERE mr.message_uuid = ?
-                GROUP BY emoji
-            `, [messageId]);
+            // 獲取消息的所有反應
+            const reactions = await database.query(
+                `SELECT emoji, COUNT(*) as count, GROUP_CONCAT(u.username) as users
+                 FROM message_reactions mr
+                 JOIN users u ON mr.user_uuid = u.uuid
+                 WHERE mr.message_uuid = ?
+                 GROUP BY emoji`,
+                [messageId]
+            );
 
-            // 構建反應事件
-            const reactionEvent = {
+            const reactionData = {
                 messageId,
-                userId,
-                emoji,
+                reactions: reactions.map(r => ({
+                    emoji: r.emoji,
+                    count: r.count,
+                    users: r.users.split(',')
+                })),
+                user: {
+                    id: userId,
+                    username: socket.user.username
+                },
                 action,
-                reactions,
+                emoji,
                 timestamp: new Date().toISOString()
             };
 
-            // 廣播反應事件
-            if (message.roomUuid) {
-                this.io.to(`room:${message.roomUuid}`).emit(WS_EVENTS.MESSAGE_REACTION, reactionEvent);
-            } else if (message.receiverUuid) {
-                this.io.to(`user:${message.receiverUuid}`).emit(WS_EVENTS.MESSAGE_REACTION, reactionEvent);
-                socket.emit(WS_EVENTS.MESSAGE_REACTION, reactionEvent);
-            }
+            // 廣播反應到房間
+            this.io.to(`room:${message.room_uuid}`).emit(WS_EVENTS.MESSAGE_REACTION, reactionData);
 
-            logger.websocket('訊息反應處理成功', userId, {
+            logger.websocket('Message reaction', userId, {
                 messageId,
                 emoji,
                 action
             });
 
         } catch (error) {
-            logger.error('處理訊息反應失敗', {
+            logger.error('Failed to handle message reaction', {
                 error: error.message,
                 userId: socket.userId,
-                messageId: data.messageId
+                reactionData: data
             });
 
             socket.emit(WS_EVENTS.ERROR, {
-                code: ERROR_CODES.INTERNAL_ERROR,
-                message: '處理反應失敗'
+                message: '反應操作失敗',
+                code: 'REACTION_FAILED'
             });
         }
     }
 
-    // 處理訊息文件
-    async handleMessageFiles(messageUuid, files) {
+    // 處理消息編輯
+    async handleEditMessage(socket, data) {
         try {
-            for (const fileId of files) {
-                const file = await File.findByUuid(fileId);
-                if (file) {
-                    // 關聯文件到訊息
-                    await file.update({ messageUuid });
+            const { messageId, newContent } = data;
+            const userId = socket.userId;
+
+            if (!messageId || !newContent) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '消息ID和新內容是必需的',
+                    code: 'INVALID_EDIT_DATA'
+                });
+                return;
+            }
+
+            // 檢查消息是否存在且是用戶發送的
+            const message = await database.get(
+                'SELECT * FROM messages WHERE uuid = ? AND user_uuid = ?',
+                [messageId, userId]
+            );
+
+            if (!message) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '消息不存在或無權限編輯',
+                    code: 'MESSAGE_NOT_EDITABLE'
+                });
+                return;
+            }
+
+            // 更新消息內容
+            await database.run(
+                'UPDATE messages SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE uuid = ?',
+                [newContent, messageId]
+            );
+
+            const editData = {
+                messageId,
+                newContent,
+                editedAt: new Date().toISOString(),
+                editor: {
+                    id: userId,
+                    username: socket.user.username
                 }
-            }
+            };
+
+            // 廣播編輯事件到房間
+            this.io.to(`room:${message.room_uuid}`).emit(WS_EVENTS.MESSAGE_EDITED, editData);
+
+            logger.websocket('Message edited', userId, {
+                messageId,
+                roomId: message.room_uuid
+            });
+
         } catch (error) {
-            logger.error('處理訊息文件失敗', {
+            logger.error('Failed to edit message', {
                 error: error.message,
-                messageUuid,
-                files
+                userId: socket.userId,
+                editData: data
+            });
+
+            socket.emit(WS_EVENTS.ERROR, {
+                message: '編輯消息失敗',
+                code: 'EDIT_MESSAGE_FAILED'
             });
         }
     }
 
-    // 檢查用戶是否被封鎖
-    async checkIfBlocked(senderId, receiverId) {
+    // 處理消息刪除
+    async handleDeleteMessage(socket, data) {
         try {
-            const database = require('../config/database');
-            const result = await database.get(`
-                SELECT 1 FROM blocked_users 
-                WHERE blocker_uuid = ? AND blocked_uuid = ?
-            `, [receiverId, senderId]);
+            const { messageId } = data;
+            const userId = socket.userId;
 
-            return !!result;
-        } catch (error) {
-            logger.error('檢查封鎖狀態失敗', { senderId, receiverId });
-            return false;
-        }
-    }
-
-    // 檢查訊息訪問權限
-    async checkMessageAccess(userId, message) {
-        try {
-            if (message.roomUuid) {
-                // 房間訊息：檢查是否為房間成員
-                const membership = await RoomMember.findByRoomAndUser(message.roomUuid, userId);
-                return !!membership;
-            } else {
-                // 私人訊息：檢查是否為發送者或接收者
-                return message.senderUuid === userId || message.receiverUuid === userId;
+            if (!messageId) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '消息ID是必需的',
+                    code: 'MESSAGE_ID_REQUIRED'
+                });
+                return;
             }
+
+            // 檢查消息是否存在且用戶有權限刪除
+            const message = await database.get(
+                `SELECT m.*, rm.role 
+                 FROM messages m
+                 JOIN room_members rm ON m.room_uuid = rm.room_uuid
+                 WHERE m.uuid = ? AND (m.user_uuid = ? OR rm.role IN ('owner', 'admin'))`,
+                [messageId, userId, userId]
+            );
+
+            if (!message) {
+                socket.emit(WS_EVENTS.ERROR, {
+                    message: '消息不存在或無權限刪除',
+                    code: 'MESSAGE_NOT_DELETABLE'
+                });
+                return;
+            }
+
+            // 軟刪除消息
+            await database.run(
+                'UPDATE messages SET deleted_at = CURRENT_TIMESTAMP WHERE uuid = ?',
+                [messageId]
+            );
+
+            const deleteData = {
+                messageId,
+                deletedAt: new Date().toISOString(),
+                deletedBy: {
+                    id: userId,
+                    username: socket.user.username
+                }
+            };
+
+            // 廣播刪除事件到房間
+            this.io.to(`room:${message.room_uuid}`).emit(WS_EVENTS.MESSAGE_DELETED, deleteData);
+
+            logger.websocket('Message deleted', userId, {
+                messageId,
+                roomId: message.room_uuid
+            });
+
         } catch (error) {
-            logger.error('檢查訊息訪問權限失敗', { userId, messageId: message.uuid });
-            return false;
+            logger.error('Failed to delete message', {
+                error: error.message,
+                userId: socket.userId,
+                deleteData: data
+            });
+
+            socket.emit(WS_EVENTS.ERROR, {
+                message: '刪除消息失敗',
+                code: 'DELETE_MESSAGE_FAILED'
+            });
         }
     }
 }

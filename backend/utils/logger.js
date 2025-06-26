@@ -43,8 +43,18 @@ if (config.logging.console) {
     );
 }
 
-// 文件輸出
+// 異常處理器配置
+const exceptionHandlers = [];
+const rejectionHandlers = [];
+
+// 文件輸出和異常處理
 if (config.logging.file && config.logging.path) {
+    // 確保日誌目錄存在
+    const fs = require('fs');
+    if (!fs.existsSync(config.logging.path)) {
+        fs.mkdirSync(config.logging.path, { recursive: true });
+    }
+
     // 錯誤日誌
     transports.push(
         new winston.transports.File({
@@ -76,26 +86,57 @@ if (config.logging.file && config.logging.path) {
             maxFiles: 5
         })
     );
+
+    // 異常處理器 - 文件
+    exceptionHandlers.push(
+        new winston.transports.File({
+            filename: path.join(config.logging.path, 'exceptions.log'),
+            format: logFormat
+        })
+    );
+
+    // Promise 拒絕處理器 - 文件
+    rejectionHandlers.push(
+        new winston.transports.File({
+            filename: path.join(config.logging.path, 'rejections.log'),
+            format: logFormat
+        })
+    );
 }
 
-// 創建 logger 實例
+// 開發環境也添加控制台異常處理器
+if (env === 'development') {
+    exceptionHandlers.push(
+        new winston.transports.Console({
+            format: consoleFormat
+        })
+    );
+
+    rejectionHandlers.push(
+        new winston.transports.Console({
+            format: consoleFormat
+        })
+    );
+}
+
+// 創建 logger 實例 - 修復關鍵配置
 const logger = winston.createLogger({
     level: config.logging.level,
     format: logFormat,
     defaultMeta: { service: 'elite-chat' },
     transports,
-    // 處理未捕獲的異常
-    exceptionHandlers: config.logging.file ? [
-        new winston.transports.File({
-            filename: path.join(config.logging.path, 'exceptions.log')
-        })
-    ] : [],
-    // 處理未處理的 Promise 拒絕
-    rejectionHandlers: config.logging.file ? [
-        new winston.transports.File({
-            filename: path.join(config.logging.path, 'rejections.log')
-        })
-    ] : []
+
+    // 修復：只有當有異常處理器時才啟用 exitOnError
+    exitOnError: false, // 設為 false 避免錯誤
+
+    // 異常處理器
+    exceptionHandlers: exceptionHandlers.length > 0 ? exceptionHandlers : undefined,
+
+    // Promise 拒絕處理器
+    rejectionHandlers: rejectionHandlers.length > 0 ? rejectionHandlers : undefined,
+
+    // 靜默模式（測試環境）
+    silent: env === 'test'
 });
 
 // 擴展 logger 功能
@@ -182,16 +223,6 @@ class Logger {
         });
     }
 
-    fileUpload(filename, size, userId, meta = {}) {
-        return this.info(`File uploaded: ${filename}`, {
-            category: 'file_upload',
-            filename,
-            size,
-            userId,
-            ...meta
-        });
-    }
-
     // 結構化錯誤日誌
     errorWithStack(error, context = {}) {
         return this.error(error.message, {
@@ -200,106 +231,6 @@ class Logger {
             context,
             timestamp: new Date().toISOString()
         });
-    }
-
-    // 請求日誌中間件
-    requestLogger() {
-        return (req, res, next) => {
-            const start = Date.now();
-
-            // 記錄請求開始
-            this.http(`${req.method} ${req.originalUrl} - START`, {
-                ip: req.ip,
-                userAgent: req.get('User-Agent'),
-                userId: req.user?.id
-            });
-
-            // 監聽響應結束
-            res.on('finish', () => {
-                const duration = Date.now() - start;
-                this.api(
-                    req.method,
-                    req.originalUrl,
-                    res.statusCode,
-                    duration,
-                    {
-                        ip: req.ip,
-                        userAgent: req.get('User-Agent'),
-                        userId: req.user?.id,
-                        contentLength: res.get('Content-Length')
-                    }
-                );
-            });
-
-            next();
-        };
-    }
-
-    // WebSocket 連接日誌
-    wsConnection(action, socketId, userId = null, meta = {}) {
-        return this.info(`WebSocket ${action}`, {
-            category: 'websocket_connection',
-            action,
-            socketId,
-            userId,
-            ...meta
-        });
-    }
-
-    // 清理舊日誌文件
-    cleanup(daysToKeep = 30) {
-        if (!config.logging.file) return;
-
-        const fs = require('fs');
-        const logDir = config.logging.path;
-
-        try {
-            const files = fs.readdirSync(logDir);
-            const now = Date.now();
-            const maxAge = daysToKeep * 24 * 60 * 60 * 1000;
-
-            files.forEach(file => {
-                const filePath = path.join(logDir, file);
-                const stats = fs.statSync(filePath);
-
-                if (now - stats.mtime.getTime() > maxAge) {
-                    fs.unlinkSync(filePath);
-                    this.info(`Cleaned up old log file: ${file}`);
-                }
-            });
-        } catch (error) {
-            this.error('Failed to cleanup log files:', { error: error.message });
-        }
-    }
-
-    // 獲取日誌統計
-    async getStats() {
-        if (!config.logging.file) {
-            return { message: 'File logging not enabled' };
-        }
-
-        const fs = require('fs').promises;
-        const logDir = config.logging.path;
-
-        try {
-            const files = await fs.readdir(logDir);
-            const stats = {};
-
-            for (const file of files) {
-                const filePath = path.join(logDir, file);
-                const fileStat = await fs.stat(filePath);
-                stats[file] = {
-                    size: fileStat.size,
-                    created: fileStat.birthtime,
-                    modified: fileStat.mtime
-                };
-            }
-
-            return stats;
-        } catch (error) {
-            this.error('Failed to get log stats:', { error: error.message });
-            return { error: error.message };
-        }
     }
 
     // 設置日誌級別
@@ -317,16 +248,15 @@ class Logger {
 // 創建全局 logger 實例
 const appLogger = new Logger();
 
-// 在測試環境中靜默日誌
-if (env === 'test') {
-    appLogger.winston.silent = true;
-}
+// 處理未捕獲的異常（兜底處理）
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // 不要立即退出，讓應用嘗試恢復
+});
 
-// 定期清理日誌文件（生產環境）
-if (env === 'production' && config.logging.file) {
-    setInterval(() => {
-        appLogger.cleanup(30); // 保留30天的日誌
-    }, 24 * 60 * 60 * 1000); // 每天執行一次
-}
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // 記錄但不退出
+});
 
 module.exports = appLogger;

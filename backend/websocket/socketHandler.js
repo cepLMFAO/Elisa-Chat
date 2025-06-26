@@ -162,6 +162,92 @@ class SocketHandler {
         this.leaveAllRooms(socket);
     }
 
+    // 房間用戶管理
+    addUserToRoom(roomId, userId) {
+        if (!this.roomUsers.has(roomId)) {
+            this.roomUsers.set(roomId, new Set());
+        }
+        this.roomUsers.get(roomId).add(userId);
+    }
+
+    removeUserFromRoom(roomId, userId) {
+        if (this.roomUsers.has(roomId)) {
+            this.roomUsers.get(roomId).delete(userId);
+            if (this.roomUsers.get(roomId).size === 0) {
+                this.roomUsers.delete(roomId);
+            }
+        }
+    }
+
+    getRoomUsers(roomId) {
+        return this.roomUsers.get(roomId) || new Set();
+    }
+
+    // 檢查用戶是否在線
+    isUserOnline(userId) {
+        return this.connectedUsers.has(userId) && this.connectedUsers.get(userId).size > 0;
+    }
+
+    // 離開所有房間
+    leaveAllRooms(socket) {
+        const userId = socket.userId;
+
+        // 從所有房間移除用戶
+        for (const [roomId, users] of this.roomUsers.entries()) {
+            if (users.has(userId)) {
+                users.delete(userId);
+
+                // 通知房間其他成員
+                socket.to(`room:${roomId}`).emit(WS_EVENTS.USER_OFFLINE, {
+                    roomId,
+                    user: {
+                        id: userId,
+                        username: socket.user?.username
+                    },
+                    timestamp: new Date().toISOString()
+                });
+
+                // 如果房間沒有用戶了，清理房間記錄
+                if (users.size === 0) {
+                    this.roomUsers.delete(roomId);
+                }
+            }
+        }
+
+        // 清理用戶的輸入狀態
+        if (this.userHandler) {
+            this.userHandler.cleanupUserTyping(userId);
+        }
+    }
+
+    // 更新用戶最後在線時間
+    async updateUserLastSeen(userId) {
+        try {
+            await database.run(
+                'UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE uuid = ?',
+                [userId]
+            );
+        } catch (error) {
+            logger.error('Failed to update user last seen', {
+                error: error.message,
+                userId
+            });
+        }
+    }
+
+    // 廣播用戶狀態
+    broadcastUserStatus(userId, status) {
+        // 廣播到用戶所在的所有房間
+        for (const [roomId, users] of this.roomUsers.entries()) {
+            if (users.has(userId)) {
+                this.io.to(`room:${roomId}`).emit(WS_EVENTS.USER_STATUS, {
+                    userId,
+                    status,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+    }
     // 用戶連接管理
     addUserConnection(userId, socketId) {
         if (!this.connectedUsers.has(userId)) {

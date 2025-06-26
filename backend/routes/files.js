@@ -24,7 +24,7 @@ router.post('/upload',
     FileController.handleFileUpload
 );
 
-// 獲取文件信息
+// 獲取文件信息 - 修復方法名稱
 router.get('/:fileId',
     [
         param('fileId')
@@ -32,7 +32,7 @@ router.get('/:fileId',
             .withMessage('文件ID必須是有效的UUID')
     ],
     ValidationMiddleware.handleValidationErrors,
-    FileController.getFile
+    FileController.getFileInfo // 修正：原來是 getFile
 );
 
 // 下載文件
@@ -44,25 +44,6 @@ router.get('/:fileId/download',
     ],
     ValidationMiddleware.handleValidationErrors,
     FileController.downloadFile
-);
-
-// 生成圖片縮圖
-router.get('/:fileId/thumbnail',
-    [
-        param('fileId')
-            .isUUID()
-            .withMessage('文件ID必須是有效的UUID'),
-        query('width')
-            .optional()
-            .isInt({ min: 50, max: 1000 })
-            .withMessage('寬度必須在50-1000像素之間'),
-        query('height')
-            .optional()
-            .isInt({ min: 50, max: 1000 })
-            .withMessage('高度必須在50-1000像素之間')
-    ],
-    ValidationMiddleware.handleValidationErrors,
-    FileController.generateThumbnail
 );
 
 // 刪除文件
@@ -77,13 +58,9 @@ router.delete('/:fileId',
     FileController.deleteFile
 );
 
-// 獲取用戶文件列表
-router.get('/user/:userId',
-    AuthMiddleware.requireSelfOrAdmin,
+// 獲取當前用戶文件列表 - 簡化路由
+router.get('/',
     [
-        param('userId')
-            .isUUID()
-            .withMessage('用戶ID必須是有效的UUID'),
         query('page')
             .optional()
             .isInt({ min: 1 })
@@ -92,18 +69,17 @@ router.get('/user/:userId',
             .optional()
             .isInt({ min: 1, max: 100 })
             .withMessage('每頁數量必須在1-100之間'),
-        query('type')
+        query('category')
             .optional()
-            .isIn(['image', 'audio', 'video', 'application', 'text'])
-            .withMessage('文件類型無效')
+            .isIn(['all', 'images', 'audio', 'video', 'documents'])
+            .withMessage('文件類型無效'),
+        query('search')
+            .optional()
+            .isLength({ min: 1, max: 100 })
+            .withMessage('搜索詞長度必須在1-100字符之間')
     ],
     ValidationMiddleware.handleValidationErrors,
     FileController.getUserFiles
-);
-
-// 獲取文件統計
-router.get('/stats/user',
-    FileController.getFileStats
 );
 
 // 管理員路由
@@ -128,6 +104,12 @@ router.post('/cleanup',
     AuthMiddleware.requireAdmin,
     RateLimitMiddleware.sensitiveActionLimiter,
     FileController.cleanupOrphanFiles
+);
+
+// 獲取存儲使用情況（管理員）
+router.get('/admin/storage',
+    AuthMiddleware.requireAdmin,
+    FileController.getStorageUsage
 );
 
 module.exports = router;
