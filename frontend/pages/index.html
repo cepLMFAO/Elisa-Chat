@@ -3,150 +3,427 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elite Chat - 歡迎頁面</title>
+    <meta name="description" content="Elite Chat - 註冊頁面">
+    <title>註冊 - Elite Chat</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/themes.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+
+    <!-- Font Awesome - 使用不同的CDN避免CORS問題 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css">
+    <!-- 備用CDN -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.5.0/css/all.css" media="print" onload="this.media='all'">
+
+    <!-- 內嵌圖標字體樣式以防CDN失敗 -->
+    <style>
+        /* Font Awesome Icons Fallback */
+        .fa, .fas, .far, .fal, .fab {
+            font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Pro', 'Font Awesome 6 Brands', 'Font Awesome 5 Free', 'Font Awesome 5 Pro', 'FontAwesome', sans-serif !important;
+            font-weight: 900;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 基本圖標 Unicode 映射 - 如果字體加載失敗時的備用方案 */
+        .fa-comments::before { content: '💬'; }
+        .fa-user::before { content: '👤'; }
+        .fa-envelope::before { content: '✉️'; }
+        .fa-lock::before { content: '🔒'; }
+        .fa-eye::before { content: '👁️'; }
+        .fa-eye-slash::before { content: '🙈'; }
+        .fa-spinner::before { content: '⟳'; animation: fa-spin 2s infinite linear; }
+        .fa-check-circle::before { content: '✅'; }
+        .fa-exclamation-circle::before { content: '❗'; }
+        .fa-info-circle::before { content: 'ℹ️'; }
+        .fa-times::before { content: '✖️'; }
+        .fa-rocket::before { content: '🚀'; }
+
+        @keyframes fa-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* CSS Variables */
         :root {
             --primary-color: #667eea;
+            --primary-dark: #5a67d8;
             --secondary-color: #764ba2;
             --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
             --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
             --gray-900: #111827;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-light: #e5e7eb;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
             --spacing-md: 1rem;
             --spacing-lg: 1.5rem;
             --spacing-xl: 2rem;
             --spacing-2xl: 3rem;
+            --radius-sm: 0.25rem;
+            --radius-md: 0.5rem;
             --radius-lg: 0.75rem;
             --radius-xl: 1rem;
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --radius-full: 9999px;
+            --font-size-xs: 0.75rem;
+            --font-size-sm: 0.875rem;
+            --font-size-base: 1rem;
             --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem;
             --font-size-2xl: 1.5rem;
-            --font-size-3xl: 1.875rem;
+            --transition-fast: all 0.15s ease-in-out;
         }
 
+        /* Base Styles */
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+        }
+
+        /* Register Container */
+        .register-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: var(--spacing-lg);
         }
 
-        .welcome-container {
+        .register-card {
             background: var(--white);
             border-radius: var(--radius-xl);
             padding: var(--spacing-2xl);
             box-shadow: var(--shadow-xl);
+            width: 100%;
+            max-width: 450px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Header */
+        .register-header {
             text-align: center;
-            max-width: 500px;
-            width: 90%;
-            animation: slideInUp 0.8s ease-out;
-        }
-
-        .welcome-logo {
-            font-size: 5rem;
-            color: var(--primary-color);
-            margin-bottom: var(--spacing-xl);
-        }
-
-        .welcome-container h1 {
-            margin: 0 0 var(--spacing-md) 0;
-            font-size: var(--font-size-3xl);
-            font-weight: 700;
-            color: var(--gray-900);
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .welcome-container p {
-            margin: 0 0 var(--spacing-2xl) 0;
-            color: var(--gray-600);
-            font-size: var(--font-size-lg);
-            line-height: 1.6;
-        }
-
-        .welcome-features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: var(--spacing-lg);
             margin-bottom: var(--spacing-2xl);
         }
 
-        .feature-item {
-            text-align: center;
-            padding: var(--spacing-md);
-        }
-
-        .feature-icon {
-            font-size: var(--font-size-2xl);
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .feature-text {
-            font-size: 0.875rem;
-            color: var(--gray-600);
-            font-weight: 500;
-        }
-
-        .welcome-actions {
+        .logo {
             display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
             align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-lg);
         }
 
+        .logo i {
+            font-size: var(--font-size-2xl);
+        }
+
+        .register-header h1 {
+            margin: 0 0 var(--spacing-sm) 0;
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .register-header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: var(--font-size-base);
+        }
+
+        /* Form Styles */
+        .register-form {
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            transition: var(--transition-fast);
+            background-color: var(--white);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: var(--error-color);
+        }
+
+        .password-input {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: var(--spacing-md);
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-sm);
+            transition: var(--transition-fast);
+        }
+
+        .password-toggle:hover {
+            color: var(--text-primary);
+        }
+
+        .form-help {
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+            margin-top: var(--spacing-xs);
+        }
+
+        .form-error {
+            font-size: var(--font-size-xs);
+            color: var(--error-color);
+            margin-top: var(--spacing-xs);
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: var(--transition-fast);
+        }
+
+        .form-error.show {
+            opacity: 1;
+            max-height: 50px;
+        }
+
+        .form-success {
+            font-size: var(--font-size-xs);
+            color: var(--success-color);
+            margin-top: var(--spacing-xs);
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: var(--transition-fast);
+        }
+
+        .form-success.show {
+            opacity: 1;
+            max-height: 50px;
+        }
+
+        /* Checkbox */
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-sm);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkmark {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            position: relative;
+            transition: var(--transition-fast);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .checkbox-container input[type="checkbox"]:checked + .checkmark {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+            content: '✓';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--white);
+            font-size: var(--font-size-xs);
+            font-weight: bold;
+        }
+
+        /* Links */
+        .link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition-fast);
+        }
+
+        .link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* Buttons */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: var(--spacing-md) var(--spacing-xl);
-            font-size: 1rem;
-            font-weight: 600;
-            text-decoration: none;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-lg);
             border: none;
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            font-weight: 500;
+            text-decoration: none;
             cursor: pointer;
-            transition: all 0.15s ease;
-            min-width: 140px;
+            transition: var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), #5a67d8);
+            background-color: var(--primary-color);
             color: var(--white);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-md);
         }
 
-        .btn-outline {
-            background: transparent;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
+        .btn-loading .btn-text {
+            opacity: 0;
         }
 
-        .btn-outline:hover {
-            background: var(--primary-color);
-            color: var(--white);
+        .btn-loading .btn-spinner {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
         }
 
-        @keyframes slideInUp {
+        .btn-spinner {
+            display: none;
+        }
+
+        .btn-loading .btn-spinner {
+            display: inline-block;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Auth Switch */
+        .auth-switch {
+            text-align: center;
+            margin-top: var(--spacing-lg);
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: var(--spacing-sm);
+        }
+
+        .strength-meter {
+            height: 4px;
+            background-color: var(--gray-200);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .strength-fill {
+            height: 100%;
+            transition: var(--transition-fast);
+            border-radius: var(--radius-full);
+        }
+
+        .strength-weak { width: 25%; background-color: var(--error-color); }
+        .strength-fair { width: 50%; background-color: var(--warning-color); }
+        .strength-good { width: 75%; background-color: var(--info-color); }
+        .strength-strong { width: 100%; background-color: var(--success-color); }
+
+        .strength-text {
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -154,98 +431,591 @@
             }
         }
 
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .welcome-container {
-                padding: var(--spacing-xl);
-                margin: var(--spacing-lg);
-            }
-
-            .welcome-logo {
-                font-size: 4rem;
-            }
-
-            .welcome-container h1 {
-                font-size: var(--font-size-2xl);
-            }
-
-            .welcome-features {
-                grid-template-columns: repeat(2, 1fr);
+            .register-card {
+                padding: var(--spacing-lg);
             }
         }
+
+        /* 確保圖標正常顯示 */
+        .fas, .far, .fab {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+            font-weight: 900;
+        }
+
+        /* 修復按鈕樣式 */
+        button {
+            outline: none;
+            border: none;
+            background: none;
+            font-family: inherit;
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Notification Styles */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-light);
+            padding: var(--spacing-md);
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: var(--transition-fast);
+            max-width: 400px;
+        }
+
+        .notification-toast:not(.hidden) {
+            transform: translateX(0);
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .notification-icon {
+            flex-shrink: 0;
+        }
+
+        .notification-message {
+            flex: 1;
+            font-size: var(--font-size-sm);
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: var(--spacing-xs);
+        }
+
+        .notification-toast.success .notification-icon {
+            color: var(--success-color);
+        }
+
+        .notification-toast.error .notification-icon {
+            color: var(--error-color);
+        }
+
+        .notification-toast.warning .notification-icon {
+            color: var(--warning-color);
+        }
+
+        .notification-toast.info .notification-icon {
+            color: var(--info-color);
+        }
     </style>
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
+<body class="theme-light">
 
-<body>
-<div class="welcome-container">
-    <div class="welcome-logo">
-        <i class="fas fa-comments"></i>
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <div class="logo">
+                <i class="fas fa-comments"></i>
+                <span>Elite Chat</span>
+            </div>
+            <h1>創建帳戶</h1>
+            <p>加入我們開始精彩的聊天體驗</p>
+        </div>
+
+        <form id="register-form" class="register-form">
+            <div class="form-group">
+                <label for="register-username">
+                    <i class="fas fa-user"></i>
+                    用戶名
+                </label>
+                <input type="text" id="register-username" name="username" required
+                       placeholder="輸入用戶名" autocomplete="username"
+                       pattern="[a-zA-Z0-9_-]{3,30}">
+                <div class="form-help">3-30個字符，只能包含字母、數字、下劃線和連字符</div>
+                <div class="form-error"></div>
+                <div class="form-success"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="register-email">
+                    <i class="fas fa-envelope"></i>
+                    郵箱
+                </label>
+                <input type="email" id="register-email" name="email" required
+                       placeholder="輸入郵箱地址" autocomplete="email">
+                <div class="form-error"></div>
+                <div class="form-success"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="register-password">
+                    <i class="fas fa-lock"></i>
+                    密碼
+                </label>
+                <div class="password-input">
+                    <input type="password" id="register-password" name="password" required
+                           placeholder="輸入密碼" autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="strength-meter">
+                        <div class="strength-fill"></div>
+                    </div>
+                    <div class="strength-text">密碼強度：<span id="strength-level">弱</span></div>
+                </div>
+                <div class="form-error"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="register-confirm-password">
+                    <i class="fas fa-lock"></i>
+                    確認密碼
+                </label>
+                <div class="password-input">
+                    <input type="password" id="register-confirm-password" name="confirmPassword" required
+                           placeholder="再次輸入密碼" autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="顯示/隱藏密碼">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <div class="form-error"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="agree-terms" name="agreeTerms" required>
+                    <span class="checkmark"></span>
+                    我同意 <a href="#" class="link">服務條款</a> 和 <a href="#" class="link">隱私政策</a>
+                </label>
+                <div class="form-error"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-loading" id="register-btn">
+                <span class="btn-text">創建帳戶</span>
+                <span class="btn-spinner hidden">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </span>
+            </button>
+
+            <div class="auth-switch">
+                <span>已有帳戶？</span>
+                <a href="pages/login.html" class="link">立即登錄</a>
+            </div>
+        </form>
     </div>
+</div>
 
-    <h1>歡迎使用 Elite Chat</h1>
-    <p>企業級即時聊天解決方案，讓團隊溝通更高效、更安全。支持實時消息、文件分享、語音通話等豐富功能。</p>
-
-    <div class="welcome-features">
-        <div class="feature-item">
-            <div class="feature-icon">
-                <i class="fas fa-bolt"></i>
-            </div>
-            <div class="feature-text">即時消息</div>
-        </div>
-        <div class="feature-item">
-            <div class="feature-icon">
-                <i class="fas fa-shield-alt"></i>
-            </div>
-            <div class="feature-text">安全加密</div>
-        </div>
-        <div class="feature-item">
-            <div class="feature-icon">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="feature-text">團隊協作</div>
-        </div>
-        <div class="feature-item">
-            <div class="feature-icon">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <div class="feature-text">跨平台</div>
-        </div>
-    </div>
-
-    <div class="welcome-actions">
-        <a href="/pages/login.html" class="btn btn-primary">
-            <i class="fas fa-rocket"></i>
-            立即開始
-        </a>
-        <a href="/pages/login.html" class="btn btn-outline">
-            <i class="fas fa-sign-in-alt"></i>
-            已有帳號？登錄
-        </a>
+<!-- Notification Toast -->
+<div id="notification-toast" class="notification-toast hidden">
+    <div class="notification-content">
+        <i class="notification-icon"></i>
+        <span class="notification-message"></span>
+        <button class="notification-close">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
 </div>
 
 <script>
-    // 檢查認證狀態
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (isAuthenticated === 'true') {
-        // 如果已登錄，跳轉到聊天頁面
-        window.location.href = '/pages/chat.html';
+    class RegisterPage {
+        constructor() {
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.checkExistingAuth();
+        }
+
+        checkExistingAuth() {
+            // Check if user is already authenticated
+            const isAuthenticated = localStorage.getItem('isAuthenticated');
+            if (isAuthenticated === 'true') {
+                this.redirectToChat();
+            }
+        }
+
+        redirectToChat() {
+            window.location.href = 'pages/chat.html';
+        }
+
+        bindEvents() {
+            // Form submission
+            const registerForm = document.getElementById('register-form');
+            if (registerForm) {
+                registerForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleRegister();
+                });
+            }
+
+            // Password toggles
+            document.querySelectorAll('.password-toggle').forEach(btn => {
+                btn.addEventListener('click', this.togglePassword.bind(this));
+            });
+
+            // Password strength checker
+            const passwordInput = document.getElementById('register-password');
+            if (passwordInput) {
+                passwordInput.addEventListener('input', this.checkPasswordStrength.bind(this));
+            }
+
+            // Real-time validation
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('blur', () => this.validateField(input));
+                input.addEventListener('input', () => this.clearFieldError(input));
+            });
+        }
+
+        togglePassword(e) {
+            const button = e.target.closest('.password-toggle');
+            if (!button) return;
+
+            const input = button.parentElement.querySelector('input');
+            const icon = button.querySelector('i');
+
+            if (!input || !icon) return;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        checkPasswordStrength(e) {
+            const password = e.target.value;
+            const strengthMeter = document.querySelector('.strength-fill');
+            const strengthText = document.getElementById('strength-level');
+
+            if (!strengthMeter || !strengthText) return;
+
+            let strength = 0;
+            let level = '弱';
+            let className = 'strength-weak';
+
+            // Length check
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+
+            // Character variety checks
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            // Determine strength level
+            if (strength >= 6) {
+                level = '強';
+                className = 'strength-strong';
+            } else if (strength >= 4) {
+                level = '良好';
+                className = 'strength-good';
+            } else if (strength >= 2) {
+                level = '一般';
+                className = 'strength-fair';
+            }
+
+            strengthMeter.className = `strength-fill ${className}`;
+            strengthText.textContent = level;
+        }
+
+        validateField(input) {
+            const name = input.name;
+            const value = input.value.trim();
+
+            switch (name) {
+                case 'username':
+                    return this.validateUsername(value, input);
+                case 'email':
+                    return this.validateEmail(value, input);
+                case 'password':
+                    return this.validatePassword(value, input);
+                case 'confirmPassword':
+                    return this.validateConfirmPassword(value, input);
+                default:
+                    return true;
+            }
+        }
+
+        validateUsername(username, input) {
+            if (!username) {
+                this.showFieldError(input, '用戶名不能為空');
+                return false;
+            }
+            if (username.length < 3 || username.length > 30) {
+                this.showFieldError(input, '用戶名必須在3-30個字符之間');
+                return false;
+            }
+            if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+                this.showFieldError(input, '用戶名只能包含字母、數字、下劃線和連字符');
+                return false;
+            }
+            this.showFieldSuccess(input, '用戶名可用');
+            return true;
+        }
+
+        validateEmail(email, input) {
+            if (!email) {
+                this.showFieldError(input, '郵箱不能為空');
+                return false;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                this.showFieldError(input, '請輸入有效的郵箱地址');
+                return false;
+            }
+            this.showFieldSuccess(input, '郵箱格式正確');
+            return true;
+        }
+
+        validatePassword(password, input) {
+            if (!password) {
+                this.showFieldError(input, '密碼不能為空');
+                return false;
+            }
+            if (password.length < 8) {
+                this.showFieldError(input, '密碼長度至少8個字符');
+                return false;
+            }
+            return true;
+        }
+
+        validateConfirmPassword(confirmPassword, input) {
+            const password = document.getElementById('register-password').value;
+            if (!confirmPassword) {
+                this.showFieldError(input, '請確認密碼');
+                return false;
+            }
+            if (password !== confirmPassword) {
+                this.showFieldError(input, '密碼確認不匹配');
+                return false;
+            }
+            this.showFieldSuccess(input, '密碼確認匹配');
+            return true;
+        }
+
+        async handleRegister() {
+            const form = document.getElementById('register-form');
+            const btn = document.getElementById('register-btn');
+
+            if (!form || !btn) return;
+
+            const formData = new FormData(form);
+
+            const registerData = {
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                confirmPassword: formData.get('confirmPassword'),
+                agreeTerms: formData.get('agreeTerms') === 'on'
+            };
+
+            if (!this.validateRegisterData(registerData, form)) return;
+
+            try {
+                this.setLoading(btn, true);
+                this.clearFormErrors(form);
+
+                const response = await this.simulateRegister(registerData);
+
+                if (response.success) {
+                    this.showNotification('註冊成功！歡迎加入 Elite Chat', 'success');
+                    localStorage.setItem('isAuthenticated', 'true');
+                    localStorage.setItem('currentUser', JSON.stringify(response.user));
+
+                    setTimeout(() => {
+                        this.redirectToChat();
+                    }, 1500);
+                } else {
+                    this.showFormError(form, response.error);
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                this.showFormError(form, '註冊失敗，請稍後重試');
+            } finally {
+                this.setLoading(btn, false);
+            }
+        }
+
+        validateRegisterData(data, form) {
+            let isValid = true;
+
+            // Validate all fields
+            const inputs = form.querySelectorAll('input[required]');
+            inputs.forEach(input => {
+                if (!this.validateField(input)) {
+                    isValid = false;
+                }
+            });
+
+            // Terms agreement
+            if (!data.agreeTerms) {
+                const checkbox = form.querySelector('[name="agreeTerms"]');
+                this.showFieldError(checkbox, '請同意服務條款和隱私政策');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        async simulateRegister(data) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Simulate registration validation
+            if (!data.username || !data.email || !data.password) {
+                return { success: false, error: '請填寫所有必需字段' };
+            }
+
+            if (!data.agreeTerms) {
+                return { success: false, error: '請同意服務條款和隱私政策' };
+            }
+
+            // Simulate successful registration
+            const user = {
+                id: Date.now().toString(),
+                username: data.username,
+                email: data.email,
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.username}`,
+                status: 'online',
+                createdAt: new Date().toISOString()
+            };
+
+            return { success: true, user };
+        }
+
+        setLoading(button, loading) {
+            if (!button) return;
+
+            button.disabled = loading;
+
+            if (loading) {
+                button.classList.add('btn-loading');
+            } else {
+                button.classList.remove('btn-loading');
+            }
+        }
+
+        showFormError(form, message) {
+            let errorDiv = form.querySelector('.form-general-error');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'form-error form-general-error show';
+                errorDiv.style.marginBottom = 'var(--spacing-md)';
+                errorDiv.style.textAlign = 'center';
+                form.insertBefore(errorDiv, form.querySelector('.btn'));
+            }
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        showFieldError(input, message) {
+            input.classList.add('error');
+            const errorDiv = input.closest('.form-group').querySelector('.form-error');
+            const successDiv = input.closest('.form-group').querySelector('.form-success');
+
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+            if (successDiv) {
+                successDiv.classList.remove('show');
+            }
+        }
+
+        showFieldSuccess(input, message) {
+            input.classList.remove('error');
+            const errorDiv = input.closest('.form-group').querySelector('.form-error');
+            const successDiv = input.closest('.form-group').querySelector('.form-success');
+
+            if (errorDiv) {
+                errorDiv.classList.remove('show');
+            }
+            if (successDiv && message) {
+                successDiv.textContent = message;
+                successDiv.classList.add('show');
+            }
+        }
+
+        clearFieldError(input) {
+            input.classList.remove('error');
+            const errorDiv = input.closest('.form-group').querySelector('.form-error');
+            if (errorDiv) {
+                errorDiv.classList.remove('show');
+            }
+        }
+
+        clearFormErrors(form) {
+            // Clear field errors
+            form.querySelectorAll('.form-error').forEach(error => {
+                error.classList.remove('show');
+            });
+            form.querySelectorAll('input').forEach(input => {
+                input.classList.remove('error');
+            });
+
+            // Clear general form error
+            const generalError = form.querySelector('.form-general-error');
+            if (generalError) {
+                generalError.remove();
+            }
+        }
+
+        showNotification(message, type = 'info') {
+            let toast = document.getElementById('notification-toast');
+            if (!toast) return;
+
+            const icon = toast.querySelector('.notification-icon');
+            const messageSpan = toast.querySelector('.notification-message');
+            const closeBtn = toast.querySelector('.notification-close');
+
+            // Set icon based on type
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info-circle'
+            };
+
+            icon.className = `notification-icon ${icons[type] || icons.info}`;
+            messageSpan.textContent = message;
+            toast.className = `notification-toast ${type}`;
+
+            // Show notification
+            toast.classList.remove('hidden');
+
+            // Auto hide after 5 seconds
+            const autoHideTimeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+
+            // Close button
+            closeBtn.onclick = () => {
+                clearTimeout(autoHideTimeout);
+                toast.classList.add('hidden');
+            };
+        }
     }
 
-    // 處理在線/離線狀態
-    window.addEventListener('online', () => {
-        console.log('Network connection restored');
-    });
-
-    window.addEventListener('offline', () => {
-        console.log('Network connection lost');
+    // Initialize the register page
+    document.addEventListener('DOMContentLoaded', () => {
+        new RegisterPage();
     });
 </script>
+
 </body>
 </html>

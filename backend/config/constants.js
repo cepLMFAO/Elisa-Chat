@@ -2,7 +2,7 @@ module.exports = {
     // 服務器配置
     SERVER: {
         PORT: process.env.PORT || 8080,
-        HOST: process.env.HOST || 'localhost',
+        HOST: process.env.HOST || '0.0.0.0',
         NODE_ENV: process.env.NODE_ENV || 'development'
     },
 
