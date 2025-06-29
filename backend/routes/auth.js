@@ -1,37 +1,44 @@
 const express = require('express');
-const { body, param } = require('express-validator');
+const { body, param, query } = require('express-validator');
+const router = express.Router();
 const AuthController = require('../controllers/authController');
 const AuthMiddleware = require('../middleware/auth');
-const ValidationMiddleware = require('../middleware/validation');
 const RateLimitMiddleware = require('../middleware/rateLimit');
-
-const router = express.Router();
+const ValidationMiddleware = require('../middleware/validation');
 
 // 用戶註冊
 router.post('/register',
-    RateLimitMiddleware.authLimiter,
+    RateLimitMiddleware.registerLimiter,
     [
         body('username')
+            .trim()
             .isLength({ min: 3, max: 30 })
-            .withMessage('Username must be between 3 and 30 characters')
+            .withMessage('用戶名必須在3-30個字符之間')
             .matches(/^[a-zA-Z0-9_-]+$/)
-            .withMessage('Username can only contain letters, numbers, underscores, and hyphens'),
+            .withMessage('用戶名只能包含字母、數字、下劃線和連字符'),
+
         body('email')
             .isEmail()
             .normalizeEmail()
-            .withMessage('Please provide a valid email address'),
+            .withMessage('請輸入有效的郵箱地址'),
+
         body('password')
             .isLength({ min: 8, max: 128 })
-            .withMessage('Password must be between 8 and 128 characters')
+            .withMessage('密碼長度必須在8-128個字符之間')
             .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-            .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+            .withMessage('密碼必須包含大小寫字母、數字和特殊字符'),
+
         body('confirmPassword')
             .custom((value, { req }) => {
                 if (value !== req.body.password) {
-                    throw new Error('Password confirmation does not match password');
+                    throw new Error('密碼確認不匹配');
                 }
                 return true;
-            })
+            }),
+
+        body('agreeTerms')
+            .equals('true')
+            .withMessage('必須同意服務條款')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.register
@@ -39,18 +46,21 @@ router.post('/register',
 
 // 用戶登錄
 router.post('/login',
-    RateLimitMiddleware.authLimiter,
+    RateLimitMiddleware.loginLimiter,
     [
         body('identifier')
+            .trim()
             .notEmpty()
-            .withMessage('Email or username is required'),
+            .withMessage('請輸入用戶名或郵箱'),
+
         body('password')
             .notEmpty()
-            .withMessage('Password is required'),
-        body('twoFactorToken')
+            .withMessage('請輸入密碼'),
+
+        body('rememberMe')
             .optional()
-            .isLength({ min: 6, max: 6 })
-            .withMessage('Two-factor token must be 6 digits')
+            .isBoolean()
+            .withMessage('記住我選項必須是布爾值')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.login
@@ -58,122 +68,58 @@ router.post('/login',
 
 // 用戶登出
 router.post('/logout',
-    AuthMiddleware.optionalAuth,
     AuthController.logout
+);
+
+// 檢查認證狀態
+router.get('/status',
+    AuthController.checkAuth
 );
 
 // 刷新令牌
 router.post('/refresh',
-    RateLimitMiddleware.authLimiter,
+    RateLimitMiddleware.generalLimiter,
     [
         body('refreshToken')
             .notEmpty()
-            .withMessage('Refresh token is required')
+            .withMessage('刷新令牌是必需的')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.refreshToken
 );
 
-// 獲取當前用戶信息
-router.get('/me',
-    AuthMiddleware.verifyToken,
-    AuthMiddleware.trackUserActivity,
-    AuthController.getCurrentUser
-);
-
-// 檢查認證狀態
-router.get('/status',
-    AuthMiddleware.optionalAuth,
-    AuthController.getAuthStatus
-);
-
-// 設置雙因素認證
-router.post('/2fa/setup',
-    AuthMiddleware.verifyToken,
-    RateLimitMiddleware.sensitiveActionLimiter,
-    AuthController.setupTwoFactor
-);
-
-// 驗證並啟用雙因素認證
-router.post('/2fa/verify',
-    AuthMiddleware.verifyToken,
-    RateLimitMiddleware.sensitiveActionLimiter,
-    [
-        body('token')
-            .isLength({ min: 6, max: 6 })
-            .withMessage('Two-factor token must be 6 digits')
-    ],
-    ValidationMiddleware.handleValidationErrors,
-    AuthController.verifyTwoFactor
-);
-
-// 禁用雙因素認證
-router.post('/2fa/disable',
-    AuthMiddleware.verifyToken,
-    RateLimitMiddleware.sensitiveActionLimiter,
-    [
-        body('password')
-            .notEmpty()
-            .withMessage('Password is required to disable two-factor authentication')
-    ],
-    ValidationMiddleware.handleValidationErrors,
-    AuthController.disableTwoFactor
-);
-
-// 更改密碼
-router.post('/change-password',
-    AuthMiddleware.verifyToken,
-    RateLimitMiddleware.sensitiveActionLimiter,
-    [
-        body('currentPassword')
-            .notEmpty()
-            .withMessage('Current password is required'),
-        body('newPassword')
-            .isLength({ min: 8, max: 128 })
-            .withMessage('New password must be between 8 and 128 characters')
-            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-            .withMessage('New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
-        body('confirmPassword')
-            .custom((value, { req }) => {
-                if (value !== req.body.newPassword) {
-                    throw new Error('Password confirmation does not match new password');
-                }
-                return true;
-            })
-    ],
-    ValidationMiddleware.handleValidationErrors,
-    AuthController.changePassword
-);
-
-// 請求密碼重置
+// 忘記密碼
 router.post('/forgot-password',
-    RateLimitMiddleware.passwordResetLimiter,
+    RateLimitMiddleware.emailLimiter,
     [
         body('email')
             .isEmail()
             .normalizeEmail()
-            .withMessage('Please provide a valid email address')
+            .withMessage('請輸入有效的郵箱地址')
     ],
     ValidationMiddleware.handleValidationErrors,
-    AuthController.requestPasswordReset
+    AuthController.forgotPassword
 );
 
 // 重置密碼
 router.post('/reset-password',
-    RateLimitMiddleware.authLimiter,
+    RateLimitMiddleware.passwordResetLimiter,
     [
         body('token')
             .notEmpty()
-            .withMessage('Reset token is required'),
+            .isLength({ min: 32, max: 64 })
+            .withMessage('重置令牌格式無效'),
+
         body('password')
             .isLength({ min: 8, max: 128 })
-            .withMessage('Password must be between 8 and 128 characters')
+            .withMessage('密碼長度必須在8-128個字符之間')
             .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-            .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'),
+            .withMessage('密碼必須包含大小寫字母、數字和特殊字符'),
+
         body('confirmPassword')
             .custom((value, { req }) => {
                 if (value !== req.body.password) {
-                    throw new Error('Password confirmation does not match password');
+                    throw new Error('密碼確認不匹配');
                 }
                 return true;
             })
@@ -188,7 +134,7 @@ router.get('/verify-email/:token',
         param('token')
             .notEmpty()
             .isLength({ min: 32, max: 64 })
-            .withMessage('Invalid verification token format')
+            .withMessage('驗證令牌格式無效')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.verifyEmail
@@ -207,9 +153,9 @@ router.get('/check-username/:username',
     [
         param('username')
             .isLength({ min: 3, max: 30 })
-            .withMessage('Username must be between 3 and 30 characters')
+            .withMessage('用戶名必須在3-30個字符之間')
             .matches(/^[a-zA-Z0-9_-]+$/)
-            .withMessage('Username can only contain letters, numbers, underscores, and hyphens')
+            .withMessage('用戶名只能包含字母、數字、下劃線和連字符')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.checkUsernameAvailability
@@ -222,10 +168,84 @@ router.get('/check-email/:email',
         param('email')
             .isEmail()
             .normalizeEmail()
-            .withMessage('Please provide a valid email address')
+            .withMessage('請輸入有效的郵箱地址')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.checkEmailAvailability
+);
+
+
+// 獲取當前用戶信息
+router.get('/me',
+    AuthMiddleware.verifyToken,
+    AuthController.getCurrentUser
+);
+
+// 更新當前用戶信息
+router.put('/me',
+    AuthMiddleware.verifyToken,
+    RateLimitMiddleware.profileUpdateLimiter,
+    [
+        body('username')
+            .optional()
+            .trim()
+            .isLength({ min: 3, max: 30 })
+            .withMessage('用戶名必須在3-30個字符之間')
+            .matches(/^[a-zA-Z0-9_-]+$/)
+            .withMessage('用戶名只能包含字母、數字、下劃線和連字符'),
+
+        body('email')
+            .optional()
+            .isEmail()
+            .normalizeEmail()
+            .withMessage('請輸入有效的郵箱地址'),
+
+        body('displayName')
+            .optional()
+            .trim()
+            .isLength({ max: 50 })
+            .withMessage('顯示名稱不能超過50個字符'),
+
+        body('bio')
+            .optional()
+            .trim()
+            .isLength({ max: 200 })
+            .withMessage('個人簡介不能超過200個字符'),
+
+        body('avatar')
+            .optional()
+            .isURL()
+            .withMessage('頭像必須是有效的URL')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    AuthController.updateProfile
+);
+
+// 更改密碼
+router.put('/change-password',
+    AuthMiddleware.verifyToken,
+    RateLimitMiddleware.passwordChangeLimiter,
+    [
+        body('currentPassword')
+            .notEmpty()
+            .withMessage('請輸入當前密碼'),
+
+        body('newPassword')
+            .isLength({ min: 8, max: 128 })
+            .withMessage('新密碼長度必須在8-128個字符之間')
+            .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
+            .withMessage('新密碼必須包含大小寫字母、數字和特殊字符'),
+
+        body('confirmNewPassword')
+            .custom((value, { req }) => {
+                if (value !== req.body.newPassword) {
+                    throw new Error('新密碼確認不匹配');
+                }
+                return true;
+            })
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    AuthController.changePassword
 );
 
 // 獲取用戶會話
@@ -241,7 +261,7 @@ router.delete('/sessions/:sessionId',
     [
         param('sessionId')
             .notEmpty()
-            .withMessage('Session ID is required')
+            .withMessage('會話ID是必需的')
     ],
     ValidationMiddleware.handleValidationErrors,
     AuthController.destroySession
@@ -253,5 +273,91 @@ router.delete('/sessions',
     RateLimitMiddleware.sensitiveActionLimiter,
     AuthController.destroyAllOtherSessions
 );
+
+// 啟用兩因子認證
+router.post('/2fa/enable',
+    AuthMiddleware.verifyToken,
+    RateLimitMiddleware.sensitiveActionLimiter,
+    [
+        body('password')
+            .notEmpty()
+            .withMessage('請輸入密碼確認身份')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    AuthController.enableTwoFactor
+);
+
+// 確認兩因子認證
+router.post('/2fa/confirm',
+    AuthMiddleware.verifyToken,
+    [
+        body('token')
+            .isLength({ min: 6, max: 6 })
+            .withMessage('驗證碼必須是6位數字')
+            .matches(/^\d{6}$/)
+            .withMessage('驗證碼只能包含數字')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    AuthController.confirmTwoFactor
+);
+
+// 禁用兩因子認證
+router.post('/2fa/disable',
+    AuthMiddleware.verifyToken,
+    RateLimitMiddleware.sensitiveActionLimiter,
+    [
+        body('password')
+            .notEmpty()
+            .withMessage('請輸入密碼確認身份'),
+
+        body('token')
+            .isLength({ min: 6, max: 6 })
+            .withMessage('驗證碼必須是6位數字')
+            .matches(/^\d{6}$/)
+            .withMessage('驗證碼只能包含數字')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    AuthController.disableTwoFactor
+);
+
+// API 健康檢查
+router.get('/health',
+    (req, res) => {
+        res.json({
+            success: true,
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime()
+        });
+    }
+);
+
+// 認證統計（管理員）
+router.get('/stats',
+    AuthMiddleware.verifyToken,
+    AuthMiddleware.requireAdmin,
+    AuthController.getAuthStats
+);
+
+// 404 處理
+router.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        error: '找不到請求的端點',
+        path: req.originalUrl,
+        method: req.method
+    });
+});
+
+// 錯誤處理中間件
+router.use((error, req, res, next) => {
+    console.error('Auth route error:', error);
+
+    res.status(500).json({
+        success: false,
+        error: '認證服務內部錯誤',
+        ...(process.env.NODE_ENV === 'development' && { details: error.message })
+    });
+});
 
 module.exports = router;

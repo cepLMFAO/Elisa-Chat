@@ -2,35 +2,69 @@ const AuthService = require('../services/authService');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
+const Validators = require('../utils/validators');
 
 class AuthController {
     // 用戶註冊
     static async register(req, res) {
         try {
-            const { username, email, password, confirmPassword } = req.body;
+            const { username, email, password, confirmPassword, agreeTerms } = req.body;
 
-            // 基本驗證
-            if (!username || !email || !password || !confirmPassword) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'All fields are required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
+            // 驗證輸入
+            const validationErrors = [];
+
+            const usernameValidation = Validators.validateUsername(username);
+            if (!usernameValidation.isValid) {
+                validationErrors.push(...usernameValidation.errors);
+            }
+
+            const emailValidation = Validators.validateEmail(email);
+            if (!emailValidation.isValid) {
+                validationErrors.push(...emailValidation.errors);
+            }
+
+            const passwordValidation = Validators.validatePassword(password);
+            if (!passwordValidation.isValid) {
+                validationErrors.push(...passwordValidation.errors);
             }
 
             if (password !== confirmPassword) {
+                validationErrors.push('密碼確認不匹配');
+            }
+
+            if (validationErrors.length > 0) {
                 return res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    error: 'Passwords do not match',
-                    code: ERROR_CODES.VALIDATION_ERROR
+                    error: '註冊信息驗證失敗',
+                    code: ERROR_CODES.VALIDATION_ERROR,
+                    details: validationErrors
+                });
+            }
+
+            // 檢查用戶是否已存在
+            const existingUserByEmail = await User.findByEmail(emailValidation.sanitized);
+            if (existingUserByEmail) {
+                return res.status(HTTP_STATUS.CONFLICT).json({
+                    success: false,
+                    error: '此郵箱已被註冊',
+                    code: ERROR_CODES.USER_ALREADY_EXISTS
+                });
+            }
+
+            const existingUserByUsername = await User.findByUsername(usernameValidation.sanitized);
+            if (existingUserByUsername) {
+                return res.status(HTTP_STATUS.CONFLICT).json({
+                    success: false,
+                    error: '此用戶名已被使用',
+                    code: ERROR_CODES.USER_ALREADY_EXISTS
                 });
             }
 
             // 創建用戶
             const result = await AuthService.register({
-                username,
-                email,
-                password
+                username: usernameValidation.sanitized,
+                email: emailValidation.sanitized,
+                password: password
             }, req);
 
             // 設置HTTP-only cookie
@@ -38,14 +72,29 @@ class AuthController {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: 24 * 60 * 60 * 1000 // 24小時
+                maxAge: 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            logger.auth('User registered successfully', result.user.uuid, {
+                username: result.user.username,
+                email: result.user.email,
+                ip: req.ip,
+                userAgent: req.get('User-Agent')
             });
 
             res.status(HTTP_STATUS.CREATED).json({
                 success: true,
-                message: 'User registered successfully',
+                message: '註冊成功',
                 data: {
-                    user: result.user,
+                    user: {
+                        uuid: result.user.uuid,
+                        username: result.user.username,
+                        email: result.user.email,
+                        avatar: result.user.avatar,
+                        status: result.user.status,
+                        createdAt: result.user.createdAt
+                    },
                     accessToken: result.tokens.accessToken
                 }
             });
@@ -53,25 +102,28 @@ class AuthController {
         } catch (error) {
             logger.error('Registration error', {
                 error: error.message,
-                body: req.body,
+                stack: error.stack,
+                body: {
+                    username: req.body.username,
+                    email: req.body.email
+                },
                 ip: req.ip
             });
 
             let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Registration failed';
+            let errorMessage = '註冊失敗，請稍後再試';
+            let errorCode = ERROR_CODES.INTERNAL_ERROR;
 
-            if (error.message.includes('已存在')) {
+            if (error.message.includes('UNIQUE constraint failed')) {
                 statusCode = HTTP_STATUS.CONFLICT;
-                errorMessage = error.message;
-            } else if (error.message.includes('密碼')) {
-                statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorMessage = error.message;
+                errorMessage = '用戶名或郵箱已被使用';
+                errorCode = ERROR_CODES.USER_ALREADY_EXISTS;
             }
 
             res.status(statusCode).json({
                 success: false,
                 error: errorMessage,
-                code: ERROR_CODES.VALIDATION_ERROR
+                code: errorCode
             });
         }
     }
@@ -79,61 +131,40 @@ class AuthController {
     // 用戶登錄
     static async login(req, res) {
         try {
-            const { identifier, password, twoFactorToken } = req.body;
+            const { identifier, password, rememberMe } = req.body;
 
             if (!identifier || !password) {
                 return res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    error: 'Email/username and password are required',
+                    error: '請填寫完整的登錄信息',
                     code: ERROR_CODES.VALIDATION_ERROR
                 });
             }
 
-            // 第一步：驗證用戶名密碼
-            const user = await User.authenticate(identifier, password);
-            if (!user) {
-                return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                    success: false,
-                    error: 'Invalid credentials',
-                    code: ERROR_CODES.INVALID_CREDENTIALS
-                });
-            }
+            // 檢查登錄嘗試次數
+            await AuthService.checkLoginAttempts(req.ip);
 
-            // 第二步：檢查是否需要雙因素認證
-            if (user.twoFactorEnabled) {
-                if (!twoFactorToken) {
-                    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                        success: false,
-                        error: 'Two-factor authentication required',
-                        code: 'TWO_FACTOR_REQUIRED',
-                        requiresTwoFactor: true
-                    });
-                }
-
-                const isTwoFactorValid = await AuthService.verifyTwoFactor(user.uuid, twoFactorToken);
-                if (!isTwoFactorValid) {
-                    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                        success: false,
-                        error: 'Invalid two-factor authentication code',
-                        code: 'INVALID_TWO_FACTOR'
-                    });
-                }
-            }
-
-            // 執行完整登錄
             const result = await AuthService.login(identifier, password, req);
 
-            // 設置HTTP-only cookie
-            res.cookie('sessionId', result.sessionId, {
+            // 設置cookie
+            const cookieOptions = {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: 24 * 60 * 60 * 1000 // 24小時
-            });
+                path: '/'
+            };
+
+            if (rememberMe) {
+                cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30天
+            } else {
+                cookieOptions.maxAge = 24 * 60 * 60 * 1000; // 24小時
+            }
+
+            res.cookie('sessionId', result.sessionId, cookieOptions);
 
             res.json({
                 success: true,
-                message: 'Login successful',
+                message: '登錄成功',
                 data: {
                     user: result.user,
                     accessToken: result.tokens.accessToken
@@ -148,14 +179,14 @@ class AuthController {
             });
 
             let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Login failed';
+            let errorMessage = '登錄失敗';
 
-            if (error.message === ERROR_CODES.INVALID_CREDENTIALS) {
+            if (error.message.includes('Invalid credentials')) {
                 statusCode = HTTP_STATUS.UNAUTHORIZED;
-                errorMessage = 'Invalid credentials';
-            } else if (error.message.includes('Too many login attempts')) {
+                errorMessage = '用戶名或密碼錯誤';
+            } else if (error.message.includes('Too many attempts')) {
                 statusCode = HTTP_STATUS.TOO_MANY_REQUESTS;
-                errorMessage = error.message;
+                errorMessage = '登錄嘗試次數過多，請稍後再試';
             }
 
             res.status(statusCode).json({
@@ -169,30 +200,75 @@ class AuthController {
     // 用戶登出
     static async logout(req, res) {
         try {
-            const sessionId = req.cookies.sessionId;
-            const userId = req.user?.userId;
+            const sessionId = req.cookies.sessionId || req.headers['x-session-id'];
+            const userId = req.user?.uuid;
 
-            if (sessionId && userId) {
+            if (sessionId) {
                 await AuthService.logout(sessionId, userId);
             }
 
-            // 清除cookie
-            res.clearCookie('sessionId');
+            res.clearCookie('sessionId', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/'
+            });
 
             res.json({
                 success: true,
-                message: 'Logout successful'
+                message: '登出成功'
             });
 
         } catch (error) {
             logger.error('Logout error', {
                 error: error.message,
-                userId: req.user?.userId
+                userId: req.user?.uuid
             });
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Logout failed'
+                error: '登出失敗'
+            });
+        }
+    }
+
+    // 檢查認證狀態
+    static async checkAuth(req, res) {
+        try {
+            const sessionId = req.cookies.sessionId || req.headers['x-session-id'];
+
+            if (!sessionId) {
+                return res.json({
+                    success: false,
+                    data: { authenticated: false }
+                });
+            }
+
+            const session = await AuthService.validateSession(sessionId);
+
+            if (!session) {
+                return res.json({
+                    success: false,
+                    data: { authenticated: false }
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    authenticated: true,
+                    user: session.user
+                }
+            });
+
+        } catch (error) {
+            logger.error('Auth check error', {
+                error: error.message
+            });
+
+            res.json({
+                success: false,
+                data: { authenticated: false }
             });
         }
     }
@@ -224,15 +300,10 @@ class AuthController {
         } catch (error) {
             logger.error('Token refresh error', { error: error.message });
 
-            let statusCode = HTTP_STATUS.UNAUTHORIZED;
-            if (error.message === ERROR_CODES.TOKEN_EXPIRED) {
-                statusCode = HTTP_STATUS.UNAUTHORIZED;
-            }
-
-            res.status(statusCode).json({
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
                 error: 'Token refresh failed',
-                code: error.message
+                code: ERROR_CODES.TOKEN_EXPIRED
             });
         }
     }
@@ -270,70 +341,97 @@ class AuthController {
         }
     }
 
-    // 設置雙因素認證
-    static async setupTwoFactor(req, res) {
+    // 更新用戶資料
+    static async updateProfile(req, res) {
         try {
+            const { username, email, displayName, bio, avatar } = req.body;
             const userId = req.user.userId;
-            const result = await AuthService.setupTwoFactor(userId);
+
+            const user = await User.findByUuid(userId);
+            if (!user) {
+                return res.status(HTTP_STATUS.NOT_FOUND).json({
+                    success: false,
+                    error: 'User not found'
+                });
+            }
+
+            // 檢查用戶名和郵箱是否已被其他用戶使用
+            if (username && username !== user.username) {
+                const existingUser = await User.findByUsername(username);
+                if (existingUser && existingUser.uuid !== userId) {
+                    return res.status(HTTP_STATUS.CONFLICT).json({
+                        success: false,
+                        error: '用戶名已被使用'
+                    });
+                }
+            }
+
+            if (email && email !== user.email) {
+                const existingUser = await User.findByEmail(email);
+                if (existingUser && existingUser.uuid !== userId) {
+                    return res.status(HTTP_STATUS.CONFLICT).json({
+                        success: false,
+                        error: '郵箱已被使用'
+                    });
+                }
+            }
+
+            // 更新用戶信息
+            const updateData = {};
+            if (username) updateData.username = username;
+            if (email) updateData.email = email;
+            if (displayName !== undefined) updateData.displayName = displayName;
+            if (bio !== undefined) updateData.bio = bio;
+            if (avatar) updateData.avatar = avatar;
+
+            const updatedUser = await user.update(updateData);
 
             res.json({
                 success: true,
-                message: 'Two-factor authentication setup initiated',
+                message: '資料更新成功',
                 data: {
-                    qrCode: result.qrCode,
-                    manualEntryKey: result.manualEntryKey
+                    user: updatedUser.toJSON()
                 }
             });
 
         } catch (error) {
-            logger.error('Setup 2FA error', {
+            logger.error('Profile update error', {
                 error: error.message,
                 userId: req.user?.userId
             });
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to setup two-factor authentication'
+                error: '資料更新失敗'
             });
         }
     }
 
-    // 驗證並啟用雙因素認證
-    static async verifyTwoFactor(req, res) {
+    // 更改密碼
+    static async changePassword(req, res) {
         try {
-            const { token } = req.body;
+            const { currentPassword, newPassword } = req.body;
             const userId = req.user.userId;
 
-            if (!token) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Two-factor token is required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            const result = await AuthService.verifyAndEnableTwoFactor(userId, token);
+            const result = await AuthService.changePassword(userId, currentPassword, newPassword);
 
             res.json({
                 success: true,
-                message: 'Two-factor authentication enabled successfully',
-                data: {
-                    backupCodes: result.backupCodes
-                }
+                message: '密碼更改成功'
             });
 
         } catch (error) {
-            logger.error('Verify 2FA error', {
+            logger.error('Password change error', {
                 error: error.message,
                 userId: req.user?.userId
             });
 
             let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Failed to verify two-factor authentication';
+            let errorMessage = '密碼更改失敗';
 
-            if (error.message.includes('Invalid')) {
+            if (error.message.includes('Current password is incorrect')) {
                 statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorMessage = error.message;
+                errorMessage = '當前密碼不正確';
             }
 
             res.status(statusCode).json({
@@ -343,78 +441,28 @@ class AuthController {
         }
     }
 
-    // 禁用雙因素認證
-    static async disableTwoFactor(req, res) {
-        try {
-            const { password } = req.body;
-            const userId = req.user.userId;
-
-            if (!password) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Password is required to disable two-factor authentication',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            await AuthService.disableTwoFactor(userId, password);
-
-            res.json({
-                success: true,
-                message: 'Two-factor authentication disabled successfully'
-            });
-
-        } catch (error) {
-            logger.error('Disable 2FA error', {
-                error: error.message,
-                userId: req.user?.userId
-            });
-
-            let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Failed to disable two-factor authentication';
-
-            if (error.message.includes('Invalid password')) {
-                statusCode = HTTP_STATUS.UNAUTHORIZED;
-                errorMessage = 'Invalid password';
-            }
-
-            res.status(statusCode).json({
-                success: false,
-                error: errorMessage
-            });
-        }
-    }
-
-    // 請求密碼重置
-    static async requestPasswordReset(req, res) {
+    // 忘記密碼
+    static async forgotPassword(req, res) {
         try {
             const { email } = req.body;
 
-            if (!email) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Email is required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
+            await AuthService.forgotPassword(email);
 
-            await AuthService.generatePasswordResetToken(email);
-
-            // 總是返回成功，不透露用戶是否存在
             res.json({
                 success: true,
-                message: 'If an account with that email exists, a password reset link has been sent'
+                message: '如果該郵箱已註冊，您將收到重置密碼的郵件'
             });
 
         } catch (error) {
-            logger.error('Password reset request error', {
+            logger.error('Forgot password error', {
                 error: error.message,
                 email: req.body.email
             });
 
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                error: 'Failed to process password reset request'
+            // 無論如何都返回成功，避免洩露用戶信息
+            res.json({
+                success: true,
+                message: '如果該郵箱已註冊，您將收到重置密碼的郵件'
             });
         }
     }
@@ -422,43 +470,25 @@ class AuthController {
     // 重置密碼
     static async resetPassword(req, res) {
         try {
-            const { token, password, confirmPassword } = req.body;
-
-            if (!token || !password || !confirmPassword) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Token, password, and confirmation are required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            if (password !== confirmPassword) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Passwords do not match',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
+            const { token, password } = req.body;
 
             await AuthService.resetPassword(token, password);
 
             res.json({
                 success: true,
-                message: 'Password reset successfully'
+                message: '密碼重置成功，請使用新密碼登錄'
             });
 
         } catch (error) {
-            logger.error('Password reset error', { error: error.message });
+            logger.error('Reset password error', {
+                error: error.message
+            });
 
-            let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Failed to reset password';
+            let statusCode = HTTP_STATUS.BAD_REQUEST;
+            let errorMessage = '密碼重置失敗';
 
-            if (error.message.includes('Invalid') || error.message.includes('expired')) {
-                statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorMessage = 'Invalid or expired reset token';
-            } else if (error.message.includes('密碼')) {
-                statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorMessage = error.message;
+            if (error.message.includes('Invalid or expired token')) {
+                errorMessage = '重置令牌無效或已過期';
             }
 
             res.status(statusCode).json({
@@ -473,209 +503,47 @@ class AuthController {
         try {
             const { token } = req.params;
 
-            if (!token) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Verification token is required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            const user = await AuthService.verifyEmail(token);
+            await AuthService.verifyEmail(token);
 
             res.json({
                 success: true,
-                message: 'Email verified successfully',
-                data: {
-                    user: user.toJSON()
-                }
+                message: '郵箱驗證成功'
             });
 
         } catch (error) {
-            logger.error('Email verification error', { error: error.message });
+            logger.error('Email verification error', {
+                error: error.message,
+                token: req.params.token
+            });
 
-            let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Failed to verify email';
-
-            if (error.message.includes('Invalid') || error.message.includes('expired')) {
-                statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorMessage = 'Invalid or expired verification token';
-            }
-
-            res.status(statusCode).json({
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
-                error: errorMessage
+                error: '郵箱驗證失敗，令牌可能無效或已過期'
             });
         }
     }
 
-    // 獲取用戶會話
-    static async getUserSessions(req, res) {
+    // 重新發送郵箱驗證
+    static async resendEmailVerification(req, res) {
         try {
             const userId = req.user.userId;
-            const currentSessionId = req.cookies.sessionId;
 
-            const sessions = await AuthService.getUserSessions(userId);
-
-            // 標記當前會話
-            const sessionsWithCurrent = sessions.map(session => ({
-                ...session,
-                isCurrent: session.session_id === currentSessionId
-            }));
+            await AuthService.resendEmailVerification(userId);
 
             res.json({
                 success: true,
-                data: {
-                    sessions: sessionsWithCurrent
-                }
+                message: '驗證郵件已重新發送'
             });
 
         } catch (error) {
-            logger.error('Get user sessions error', {
+            logger.error('Resend email verification error', {
                 error: error.message,
                 userId: req.user?.userId
             });
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to get user sessions'
-            });
-        }
-    }
-
-    // 銷毀特定會話
-    static async destroySession(req, res) {
-        try {
-            const { sessionId } = req.params;
-            const userId = req.user.userId;
-
-            if (!sessionId) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Session ID is required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            const success = await AuthService.destroySession(sessionId, userId);
-
-            if (!success) {
-                return res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: false,
-                    error: 'Session not found'
-                });
-            }
-
-            res.json({
-                success: true,
-                message: 'Session destroyed successfully'
-            });
-
-        } catch (error) {
-            logger.error('Destroy session error', {
-                error: error.message,
-                sessionId: req.params.sessionId,
-                userId: req.user?.userId
-            });
-
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                error: 'Failed to destroy session'
-            });
-        }
-    }
-
-    // 銷毀所有其他會話
-    static async destroyAllOtherSessions(req, res) {
-        try {
-            const userId = req.user.userId;
-            const currentSessionId = req.cookies.sessionId;
-
-            // 獲取所有會話並銷毀除當前會話外的所有會話
-            const sessions = await AuthService.getUserSessions(userId);
-
-            for (const session of sessions) {
-                if (session.session_id !== currentSessionId) {
-                    await AuthService.destroySession(session.session_id, userId);
-                }
-            }
-
-            res.json({
-                success: true,
-                message: 'All other sessions destroyed successfully'
-            });
-
-        } catch (error) {
-            logger.error('Destroy all other sessions error', {
-                error: error.message,
-                userId: req.user?.userId
-            });
-
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-                success: false,
-                error: 'Failed to destroy sessions'
-            });
-        }
-    }
-
-    // 更改密碼
-    static async changePassword(req, res) {
-        try {
-            const { currentPassword, newPassword, confirmPassword } = req.body;
-            const userId = req.user.userId;
-
-            if (!currentPassword || !newPassword || !confirmPassword) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'All password fields are required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            if (newPassword !== confirmPassword) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'New passwords do not match',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
-
-            const user = await User.findByUuid(userId);
-            if (!user) {
-                return res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: false,
-                    error: 'User not found',
-                    code: ERROR_CODES.USER_NOT_FOUND
-                });
-            }
-
-            await user.updatePassword(currentPassword, newPassword);
-
-            res.json({
-                success: true,
-                message: 'Password changed successfully'
-            });
-
-        } catch (error) {
-            logger.error('Change password error', {
-                error: error.message,
-                userId: req.user?.userId
-            });
-
-            let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
-            let errorMessage = 'Failed to change password';
-
-            if (error.message.includes('當前密碼不正確') || error.message.includes('incorrect')) {
-                statusCode = HTTP_STATUS.UNAUTHORIZED;
-                errorMessage = 'Current password is incorrect';
-            } else if (error.message.includes('密碼')) {
-                statusCode = HTTP_STATUS.BAD_REQUEST;
-                errorMessage = error.message;
-            }
-
-            res.status(statusCode).json({
-                success: false,
-                error: errorMessage
+                error: '發送驗證郵件失敗'
             });
         }
     }
@@ -684,14 +552,6 @@ class AuthController {
     static async checkUsernameAvailability(req, res) {
         try {
             const { username } = req.params;
-
-            if (!username) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Username is required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
 
             const existingUser = await User.findByUsername(username);
             const isAvailable = !existingUser;
@@ -712,7 +572,7 @@ class AuthController {
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to check username availability'
+                error: '檢查用戶名可用性失敗'
             });
         }
     }
@@ -721,14 +581,6 @@ class AuthController {
     static async checkEmailAvailability(req, res) {
         try {
             const { email } = req.params;
-
-            if (!email) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Email is required',
-                    code: ERROR_CODES.VALIDATION_ERROR
-                });
-            }
 
             const existingUser = await User.findByEmail(email);
             const isAvailable = !existingUser;
@@ -749,99 +601,415 @@ class AuthController {
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to check email availability'
+                error: '檢查郵箱可用性失敗'
             });
         }
     }
 
-    // 重新發送郵箱驗證
-    static async resendEmailVerification(req, res) {
+    // 獲取用戶會話
+    static async getUserSessions(req, res) {
         try {
             const userId = req.user.userId;
-            const user = await User.findByUuid(userId);
 
-            if (!user) {
-                return res.status(HTTP_STATUS.NOT_FOUND).json({
-                    success: false,
-                    error: 'User not found',
-                    code: ERROR_CODES.USER_NOT_FOUND
-                });
-            }
-
-            if (user.isVerified) {
-                return res.status(HTTP_STATUS.BAD_REQUEST).json({
-                    success: false,
-                    error: 'Email is already verified'
-                });
-            }
-
-            const token = await AuthService.generateEmailVerificationToken(userId);
-
-            // 這裡應該發送郵件，暫時返回成功
-            // TODO: 集成郵件服務
+            const sessions = await AuthService.getUserSessions(userId);
 
             res.json({
                 success: true,
-                message: 'Verification email sent successfully'
+                data: {
+                    sessions
+                }
             });
 
         } catch (error) {
-            logger.error('Resend email verification error', {
+            logger.error('Get user sessions error', {
                 error: error.message,
                 userId: req.user?.userId
             });
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to resend verification email'
+                error: '獲取會話列表失敗'
             });
         }
     }
 
-    // 獲取認證狀態
-    static async getAuthStatus(req, res) {
+    // 銷毀特定會話
+    static async destroySession(req, res) {
         try {
-            const sessionId = req.cookies.sessionId;
-            const authHeader = req.headers.authorization;
+            const { sessionId } = req.params;
+            const userId = req.user.userId;
 
-            let isAuthenticated = false;
-            let user = null;
-
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-                try {
-                    const token = authHeader.substring(7);
-                    const decoded = AuthService.verifyToken(token);
-                    const foundUser = await User.findByUuid(decoded.userId);
-
-                    if (foundUser) {
-                        isAuthenticated = true;
-                        user = foundUser.toJSON();
-                    }
-                } catch (error) {
-                    // Token 無效，繼續檢查會話
-                }
-            }
-
-            if (!isAuthenticated && sessionId) {
-                // 檢查會話有效性
-                // 這裡需要從會話中獲取用戶ID
-                // 暫時簡化處理
-            }
+            await AuthService.destroySpecificSession(sessionId, userId);
 
             res.json({
                 success: true,
+                message: '會話已銷毀'
+            });
+
+        } catch (error) {
+            logger.error('Destroy session error', {
+                error: error.message,
+                sessionId: req.params.sessionId,
+                userId: req.user?.userId
+            });
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                error: '銷毀會話失敗'
+            });
+        }
+    }
+
+    // 銷毀所有其他會話
+    static async destroyAllOtherSessions(req, res) {
+        try {
+            const userId = req.user.userId;
+            const currentSessionId = req.cookies.sessionId || req.headers['x-session-id'];
+
+            await AuthService.destroyAllOtherSessions(userId, currentSessionId);
+
+            res.json({
+                success: true,
+                message: '所有其他會話已銷毀'
+            });
+
+        } catch (error) {
+            logger.error('Destroy all other sessions error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                error: '銷毀會話失敗'
+            });
+        }
+    }
+
+    // 啟用兩因子認證
+    static async enableTwoFactor(req, res) {
+        try {
+            const { password } = req.body;
+            const userId = req.user.userId;
+
+            const result = await AuthService.enableTwoFactor(userId, password);
+
+            res.json({
+                success: true,
+                message: '兩因子認證初始化成功',
                 data: {
-                    authenticated: isAuthenticated,
-                    user
+                    qrCode: result.qrCode,
+                    secret: result.secret,
+                    backupCodes: result.backupCodes
                 }
             });
 
         } catch (error) {
-            logger.error('Get auth status error', { error: error.message });
+            logger.error('Enable 2FA error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+            let errorMessage = '啟用兩因子認證失敗';
+
+            if (error.message.includes('Invalid password')) {
+                statusCode = HTTP_STATUS.BAD_REQUEST;
+                errorMessage = '密碼錯誤';
+            }
+
+            res.status(statusCode).json({
+                success: false,
+                error: errorMessage
+            });
+        }
+    }
+
+    // 確認兩因子認證
+    static async confirmTwoFactor(req, res) {
+        try {
+            const { token } = req.body;
+            const userId = req.user.userId;
+
+            await AuthService.confirmTwoFactor(userId, token);
+
+            res.json({
+                success: true,
+                message: '兩因子認證啟用成功'
+            });
+
+        } catch (error) {
+            logger.error('Confirm 2FA error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                error: '驗證碼錯誤'
+            });
+        }
+    }
+
+    // 禁用兩因子認證
+    static async disableTwoFactor(req, res) {
+        try {
+            const { password, token } = req.body;
+            const userId = req.user.userId;
+
+            await AuthService.disableTwoFactor(userId, password, token);
+
+            res.json({
+                success: true,
+                message: '兩因子認證已禁用'
+            });
+
+        } catch (error) {
+            logger.error('Disable 2FA error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            let statusCode = HTTP_STATUS.BAD_REQUEST;
+            let errorMessage = '禁用兩因子認證失敗';
+
+            if (error.message.includes('Invalid password')) {
+                errorMessage = '密碼錯誤';
+            } else if (error.message.includes('Invalid token')) {
+                errorMessage = '驗證碼錯誤';
+            }
+
+            res.status(statusCode).json({
+                success: false,
+                error: errorMessage
+            });
+        }
+    }
+
+    // 獲取認證統計（管理員）
+    static async getAuthStats(req, res) {
+        try {
+            const stats = await AuthService.getAuthStats();
+
+            res.json({
+                success: true,
+                data: {
+                    stats
+                }
+            });
+
+        } catch (error) {
+            logger.error('Get auth stats error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
 
             res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to get authentication status'
+                error: '獲取統計數據失敗'
+            });
+        }
+    }
+
+    // OAuth 登錄（Google）
+    static async googleAuth(req, res) {
+        try {
+            const { token } = req.body;
+
+            const result = await AuthService.googleAuth(token, req);
+
+            // 設置cookie
+            res.cookie('sessionId', result.sessionId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            res.json({
+                success: true,
+                message: '登錄成功',
+                data: {
+                    user: result.user,
+                    accessToken: result.tokens.accessToken,
+                    isNewUser: result.isNewUser
+                }
+            });
+
+        } catch (error) {
+            logger.error('Google auth error', {
+                error: error.message,
+                ip: req.ip
+            });
+
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: 'Google 登錄失敗'
+            });
+        }
+    }
+
+    // OAuth 登錄（Facebook）
+    static async facebookAuth(req, res) {
+        try {
+            const { token } = req.body;
+
+            const result = await AuthService.facebookAuth(token, req);
+
+            // 設置cookie
+            res.cookie('sessionId', result.sessionId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            res.json({
+                success: true,
+                message: '登錄成功',
+                data: {
+                    user: result.user,
+                    accessToken: result.tokens.accessToken,
+                    isNewUser: result.isNewUser
+                }
+            });
+
+        } catch (error) {
+            logger.error('Facebook auth error', {
+                error: error.message,
+                ip: req.ip
+            });
+
+            res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: 'Facebook 登錄失敗'
+            });
+        }
+    }
+
+    // 帳戶刪除
+    static async deleteAccount(req, res) {
+        try {
+            const { password } = req.body;
+            const userId = req.user.userId;
+
+            await AuthService.deleteAccount(userId, password);
+
+            // 清除cookie
+            res.clearCookie('sessionId', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/'
+            });
+
+            res.json({
+                success: true,
+                message: '帳戶已刪除'
+            });
+
+        } catch (error) {
+            logger.error('Delete account error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            let statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR;
+            let errorMessage = '刪除帳戶失敗';
+
+            if (error.message.includes('Invalid password')) {
+                statusCode = HTTP_STATUS.BAD_REQUEST;
+                errorMessage = '密碼錯誤';
+            }
+
+            res.status(statusCode).json({
+                success: false,
+                error: errorMessage
+            });
+        }
+    }
+
+    // 匯出用戶數據
+    static async exportUserData(req, res) {
+        try {
+            const userId = req.user.userId;
+
+            const userData = await AuthService.exportUserData(userId);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Content-Disposition', 'attachment; filename="user-data.json"');
+
+            res.json({
+                success: true,
+                data: userData,
+                exportedAt: new Date().toISOString()
+            });
+
+        } catch (error) {
+            logger.error('Export user data error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                error: '匯出用戶數據失敗'
+            });
+        }
+    }
+
+    // 設備管理 - 獲取設備列表
+    static async getDevices(req, res) {
+        try {
+            const userId = req.user.userId;
+
+            const devices = await AuthService.getUserDevices(userId);
+
+            res.json({
+                success: true,
+                data: {
+                    devices
+                }
+            });
+
+        } catch (error) {
+            logger.error('Get devices error', {
+                error: error.message,
+                userId: req.user?.userId
+            });
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                error: '獲取設備列表失敗'
+            });
+        }
+    }
+
+    // 設備管理 - 移除設備
+    static async removeDevice(req, res) {
+        try {
+            const { deviceId } = req.params;
+            const userId = req.user.userId;
+
+            await AuthService.removeDevice(userId, deviceId);
+
+            res.json({
+                success: true,
+                message: '設備已移除'
+            });
+
+        } catch (error) {
+            logger.error('Remove device error', {
+                error: error.message,
+                deviceId: req.params.deviceId,
+                userId: req.user?.userId
+            });
+
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+                success: false,
+                error: '移除設備失敗'
             });
         }
     }

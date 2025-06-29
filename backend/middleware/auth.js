@@ -1,145 +1,236 @@
-const AuthService = require('../services/authService');
+const jwt = require('jsonwebtoken');
+const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 const User = require('../models/User');
+const AuthService = require('../services/authService');
 const logger = require('../utils/logger');
-const { HTTP_STATUS, ERROR_CODES, USER_ROLES } = require('../config/constants');
 
 class AuthMiddleware {
-    // 驗證JWT令牌
+    // 驗證令牌
     static async verifyToken(req, res, next) {
         try {
-            const authHeader = req.headers.authorization;
-            const sessionId = req.cookies.sessionId;
+            let token;
 
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            // 從 Authorization header 獲取令牌
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.substring(7);
+            }
+
+            // 從 cookie 獲取會話ID
+            const sessionId = req.cookies.sessionId || req.headers['x-session-id'];
+
+            if (!token && !sessionId) {
                 return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                     success: false,
-                    error: 'Access token is required',
-                    code: ERROR_CODES.TOKEN_INVALID
+                    error: '需要認證',
+                    code: ERROR_CODES.AUTH_REQUIRED
                 });
             }
 
-            const token = authHeader.substring(7);
-            const decoded = AuthService.verifyToken(token);
+            let user;
 
-            // 驗證會話（如果提供）
-            if (sessionId) {
-                const isSessionValid = await AuthService.validateSession(sessionId, decoded.userId);
-                if (!isSessionValid) {
+            if (token) {
+                // 驗證 JWT 令牌
+                try {
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                    user = await User.findByUuid(decoded.userId);
+                } catch (jwtError) {
                     return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                         success: false,
-                        error: 'Session expired',
-                        code: ERROR_CODES.TOKEN_EXPIRED
+                        error: '令牌無效',
+                        code: ERROR_CODES.TOKEN_INVALID
                     });
                 }
+            } else if (sessionId) {
+                // 驗證會話
+                const session = await AuthService.validateSession(sessionId);
+                if (!session) {
+                    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                        success: false,
+                        error: '會話無效或已過期',
+                        code: ERROR_CODES.AUTH_EXPIRED
+                    });
+                }
+                user = session.user;
             }
 
-            // 獲取用戶信息
-            const user = await User.findByUuid(decoded.userId);
             if (!user) {
                 return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                     success: false,
-                    error: 'User not found',
+                    error: '用戶不存在',
                     code: ERROR_CODES.USER_NOT_FOUND
                 });
             }
 
             // 檢查用戶狀態
-            if (user.status === 'deleted' || user.status === 'banned') {
+            if (user.status === 'banned') {
                 return res.status(HTTP_STATUS.FORBIDDEN).json({
                     success: false,
-                    error: 'Account is not active',
-                    code: ERROR_CODES.ACCESS_DENIED
+                    error: '帳戶已被禁用',
+                    code: ERROR_CODES.USER_BLOCKED
                 });
             }
 
-            // 將用戶信息添加到請求對象
-            req.user = {
-                userId: user.uuid,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                isVerified: user.isVerified,
-                twoFactorEnabled: user.twoFactorEnabled
-            };
-
+            req.user = user;
             next();
 
         } catch (error) {
-            logger.error('Token verification error', {
+            logger.error('Auth middleware error', {
                 error: error.message,
-                ip: req.ip,
-                userAgent: req.get('User-Agent')
+                path: req.path,
+                ip: req.ip
             });
 
-            let statusCode = HTTP_STATUS.UNAUTHORIZED;
-            let errorCode = ERROR_CODES.TOKEN_INVALID;
-
-            if (error.message === ERROR_CODES.TOKEN_EXPIRED) {
-                errorCode = ERROR_CODES.TOKEN_EXPIRED;
-            }
-
-            res.status(statusCode).json({
+            return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Authentication failed',
-                code: errorCode
+                error: '認證過程中發生錯誤',
+                code: ERROR_CODES.INTERNAL_ERROR
             });
         }
     }
 
-    // 可選的令牌驗證（不強制要求認證）
+    // 可選認證（不強制要求登錄）
     static async optionalAuth(req, res, next) {
         try {
             const authHeader = req.headers.authorization;
+            const sessionId = req.cookies.sessionId;
 
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-                const token = authHeader.substring(7);
-                const decoded = AuthService.verifyToken(token);
-                const user = await User.findByUuid(decoded.userId);
-
-                if (user && user.status !== 'deleted' && user.status !== 'banned') {
-                    req.user = {
-                        userId: user.uuid,
-                        username: user.username,
-                        email: user.email,
-                        role: user.role,
-                        isVerified: user.isVerified,
-                        twoFactorEnabled: user.twoFactorEnabled
-                    };
-                }
+            if (authHeader || sessionId) {
+                return AuthMiddleware.verifyToken(req, res, next);
             }
 
+            // 沒有提供認證信息，繼續執行但不設置 req.user
             next();
 
         } catch (error) {
-            // 可選認證失敗時不返回錯誤，繼續處理
+            // 認證失敗也繼續執行
             next();
         }
     }
 
-    // 角色驗證中間件
-    static requireRole(...allowedRoles) {
+    // 要求管理員權限
+    static requireAdmin(req, res, next) {
+        if (!req.user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: '需要認證',
+                code: ERROR_CODES.AUTH_REQUIRED
+            });
+        }
+
+        if (!req.user.isAdmin) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({
+                success: false,
+                error: '需要管理員權限',
+                code: ERROR_CODES.PERMISSION_DENIED
+            });
+        }
+
+        next();
+    }
+
+    // 要求版主權限
+    static requireModerator(req, res, next) {
+        if (!req.user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: '需要認證',
+                code: ERROR_CODES.AUTH_REQUIRED
+            });
+        }
+
+        if (!req.user.isAdmin && !req.user.isModerator) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({
+                success: false,
+                error: '需要版主權限',
+                code: ERROR_CODES.PERMISSION_DENIED
+            });
+        }
+
+        next();
+    }
+
+    // 要求訪問自己的資源或管理員權限
+    static requireSelfOrAdmin(req, res, next) {
+        if (!req.user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: '需要認證',
+                code: ERROR_CODES.AUTH_REQUIRED
+            });
+        }
+
+        const targetUserId = req.params.userId || req.params.id;
+
+        if (req.user.uuid !== targetUserId && !req.user.isAdmin) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({
+                success: false,
+                error: '權限不足',
+                code: ERROR_CODES.PERMISSION_DENIED
+            });
+        }
+
+        next();
+    }
+
+    // 檢查郵箱是否已驗證
+    static requireEmailVerified(req, res, next) {
+        if (!req.user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: '需要認證',
+                code: ERROR_CODES.AUTH_REQUIRED
+            });
+        }
+
+        if (!req.user.emailVerified) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({
+                success: false,
+                error: '需要驗證郵箱',
+                code: ERROR_CODES.AUTH_REQUIRED
+            });
+        }
+
+        next();
+    }
+
+    // 檢查兩因子認證
+    static requireTwoFactor(req, res, next) {
+        if (!req.user) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+                success: false,
+                error: '需要認證',
+                code: ERROR_CODES.AUTH_REQUIRED
+            });
+        }
+
+        if (req.user.twoFactorEnabled && !req.session?.twoFactorVerified) {
+            return res.status(HTTP_STATUS.FORBIDDEN).json({
+                success: false,
+                error: '需要兩因子認證',
+                code: ERROR_CODES.TWO_FACTOR_REQUIRED
+            });
+        }
+
+        next();
+    }
+
+    // 檢查用戶狀態
+    static checkUserStatus(allowedStatuses = ['active']) {
         return (req, res, next) => {
             if (!req.user) {
                 return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                     success: false,
-                    error: 'Authentication required',
-                    code: ERROR_CODES.TOKEN_INVALID
+                    error: '需要認證',
+                    code: ERROR_CODES.AUTH_REQUIRED
                 });
             }
 
-            if (!allowedRoles.includes(req.user.role)) {
-                logger.security('Access denied - insufficient role', {
-                    userId: req.user.userId,
-                    userRole: req.user.role,
-                    requiredRoles: allowedRoles,
-                    path: req.path,
-                    method: req.method
-                });
-
+            if (!allowedStatuses.includes(req.user.status)) {
                 return res.status(HTTP_STATUS.FORBIDDEN).json({
                     success: false,
-                    error: 'Insufficient permissions',
-                    code: ERROR_CODES.ACCESS_DENIED
+                    error: '帳戶狀態不允許此操作',
+                    code: ERROR_CODES.USER_BLOCKED
                 });
             }
 
@@ -147,273 +238,134 @@ class AuthMiddleware {
         };
     }
 
-    // 管理員權限驗證
-    static requireAdmin(req, res, next) {
-        return AuthMiddleware.requireRole(USER_ROLES.ADMIN)(req, res, next);
-    }
-
-    // 版主權限驗證
-    static requireModerator(req, res, next) {
-        return AuthMiddleware.requireRole(USER_ROLES.ADMIN, USER_ROLES.MODERATOR)(req, res, next);
-    }
-
-    // 郵箱驗證要求
-    static requireEmailVerification(req, res, next) {
-        if (!req.user) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                success: false,
-                error: 'Authentication required',
-                code: ERROR_CODES.TOKEN_INVALID
-            });
-        }
-
-        if (!req.user.isVerified) {
-            return res.status(HTTP_STATUS.FORBIDDEN).json({
-                success: false,
-                error: 'Email verification required',
-                code: 'EMAIL_VERIFICATION_REQUIRED'
-            });
-        }
-
-        next();
-    }
-
-    // 雙因素認證檢查
-    static checkTwoFactor(req, res, next) {
-        if (!req.user) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                success: false,
-                error: 'Authentication required',
-                code: ERROR_CODES.TOKEN_INVALID
-            });
-        }
-
-        // 如果用戶啟用了雙因素認證但當前會話未驗證
-        if (req.user.twoFactorEnabled && !req.session?.twoFactorVerified) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                success: false,
-                error: 'Two-factor authentication required',
-                code: 'TWO_FACTOR_REQUIRED'
-            });
-        }
-
-        next();
-    }
-
-    // 自己或管理員權限（用於訪問個人資源）
-    static requireSelfOrAdmin(req, res, next) {
-        if (!req.user) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-                success: false,
-                error: 'Authentication required',
-                code: ERROR_CODES.TOKEN_INVALID
-            });
-        }
-
-        const targetUserId = req.params.userId || req.params.uuid;
-        const isOwner = req.user.userId === targetUserId;
-        const isAdmin = req.user.role === USER_ROLES.ADMIN;
-
-        if (!isOwner && !isAdmin) {
-            return res.status(HTTP_STATUS.FORBIDDEN).json({
-                success: false,
-                error: 'Access denied',
-                code: ERROR_CODES.ACCESS_DENIED
-            });
-        }
-
-        next();
-    }
-
-    // 房間成員驗證
-    static async requireRoomMember(req, res, next) {
+    // 檢查房間權限
+    static async checkRoomPermission(req, res, next) {
         try {
             if (!req.user) {
                 return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                     success: false,
-                    error: 'Authentication required',
-                    code: ERROR_CODES.TOKEN_INVALID
+                    error: '需要認證',
+                    code: ERROR_CODES.AUTH_REQUIRED
                 });
             }
 
-            const roomId = req.params.roomId || req.body.roomId;
+            const roomId = req.params.roomId;
             if (!roomId) {
                 return res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
-                    error: 'Room ID is required',
+                    error: '缺少房間ID',
                     code: ERROR_CODES.VALIDATION_ERROR
                 });
             }
 
-            const database = require('../config/database');
-            const membership = await database.get(
-                `SELECT rm.role FROM room_members rm
-                 JOIN rooms r ON rm.room_uuid = r.uuid
-                 WHERE r.uuid = ? AND rm.user_uuid = ?`,
-                [roomId, req.user.userId]
-            );
+            // 這裡應該檢查用戶是否有訪問房間的權限
+            // 具體邏輯取決於您的房間權限模型
+            const hasPermission = await AuthService.checkRoomPermission(req.user.uuid, roomId);
 
-            if (!membership) {
+            if (!hasPermission) {
                 return res.status(HTTP_STATUS.FORBIDDEN).json({
                     success: false,
-                    error: 'Not a member of this room',
-                    code: ERROR_CODES.ACCESS_DENIED
+                    error: '沒有訪問此房間的權限',
+                    code: ERROR_CODES.PERMISSION_DENIED
                 });
             }
 
-            req.roomMembership = membership;
             next();
 
         } catch (error) {
-            logger.error('Room membership verification error', {
+            logger.error('Room permission check error', {
                 error: error.message,
-                userId: req.user?.userId,
+                userId: req.user?.uuid,
                 roomId: req.params.roomId
             });
 
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
                 success: false,
-                error: 'Failed to verify room membership'
+                error: '權限檢查失敗',
+                code: ERROR_CODES.INTERNAL_ERROR
             });
         }
     }
 
-    // 房間管理員權限
-    static requireRoomAdmin(req, res, next) {
-        if (!req.roomMembership) {
-            return res.status(HTTP_STATUS.FORBIDDEN).json({
-                success: false,
-                error: 'Room membership required',
-                code: ERROR_CODES.ACCESS_DENIED
-            });
-        }
-
-        const allowedRoles = ['owner', 'admin'];
-        if (!allowedRoles.includes(req.roomMembership.role)) {
-            return res.status(HTTP_STATUS.FORBIDDEN).json({
-                success: false,
-                error: 'Room admin privileges required',
-                code: ERROR_CODES.ACCESS_DENIED
-            });
-        }
-
-        next();
-    }
-
-    // API密鑰驗證（用於服務到服務的調用）
+    // API 密鑰認證（用於服務間通信）
     static verifyApiKey(req, res, next) {
         const apiKey = req.headers['x-api-key'];
-        const expectedApiKey = process.env.API_KEY;
 
-        if (!expectedApiKey) {
-            return res.status(HTTP_STATUS.SERVICE_UNAVAILABLE).json({
+        if (!apiKey) {
+            return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
-                error: 'API key authentication not configured'
+                error: '缺少 API 密鑰',
+                code: ERROR_CODES.AUTH_REQUIRED
             });
         }
 
-        if (!apiKey || apiKey !== expectedApiKey) {
-            logger.security('Invalid API key attempt', {
-                ip: req.ip,
-                userAgent: req.get('User-Agent'),
-                providedKey: apiKey ? 'present' : 'missing'
-            });
-
+        if (apiKey !== process.env.API_SECRET_KEY) {
             return res.status(HTTP_STATUS.UNAUTHORIZED).json({
                 success: false,
-                error: 'Invalid API key',
-                code: ERROR_CODES.ACCESS_DENIED
+                error: 'API 密鑰無效',
+                code: ERROR_CODES.AUTH_INVALID
             });
         }
 
         next();
     }
 
-    // WebSocket 認證
-    static async authenticateWebSocket(socket, next) {
+    // 檢查設備限制
+    static async checkDeviceLimit(req, res, next) {
         try {
-            const token = socket.handshake.auth.token || socket.handshake.query.token;
-
-            if (!token) {
-                return next(new Error('Authentication token required'));
+            if (!req.user) {
+                return next();
             }
 
-            const decoded = AuthService.verifyToken(token);
-            const user = await User.findByUuid(decoded.userId);
-
-            if (!user) {
-                return next(new Error('User not found'));
+            const deviceId = req.headers['x-device-id'];
+            if (!deviceId) {
+                return next();
             }
 
-            if (user.status === 'deleted' || user.status === 'banned') {
-                return next(new Error('Account is not active'));
-            }
+            const deviceCount = await AuthService.getUserDeviceCount(req.user.uuid);
+            const maxDevices = process.env.MAX_DEVICES_PER_USER || 5;
 
-            socket.userId = user.uuid;
-            socket.user = {
-                userId: user.uuid,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                avatar: user.avatar
-            };
+            if (deviceCount >= maxDevices) {
+                const isKnownDevice = await AuthService.isKnownDevice(req.user.uuid, deviceId);
 
-            logger.websocket('WebSocket authenticated', user.uuid, {
-                socketId: socket.id,
-                ip: socket.handshake.address
-            });
-
-            next();
-
-        } catch (error) {
-            logger.error('WebSocket authentication error', {
-                error: error.message,
-                socketId: socket.id,
-                ip: socket.handshake.address
-            });
-
-            next(new Error('Authentication failed'));
-        }
-    }
-
-    // 會話清理中間件
-    static async sessionCleanup(req, res, next) {
-        try {
-            // 定期清理過期會話
-            if (Math.random() < 0.01) { // 1% 的請求執行清理
-                setImmediate(() => {
-                    AuthService.cleanupExpiredSessions().catch(error => {
-                        logger.error('Session cleanup error', { error: error.message });
-                    });
-                });
-            }
-
-            next();
-
-        } catch (error) {
-            // 清理錯誤不應該影響正常請求
-            next();
-        }
-    }
-
-    // 用戶活動追蹤
-    static trackUserActivity(req, res, next) {
-        if (req.user) {
-            setImmediate(async () => {
-                try {
-                    const user = await User.findByUuid(req.user.userId);
-                    if (user) {
-                        await user.updateStatus(user.status); // 更新最後活動時間
-                    }
-                } catch (error) {
-                    logger.error('User activity tracking error', {
-                        error: error.message,
-                        userId: req.user.userId
+                if (!isKnownDevice) {
+                    return res.status(HTTP_STATUS.FORBIDDEN).json({
+                        success: false,
+                        error: '設備數量已達上限',
+                        code: ERROR_CODES.PERMISSION_DENIED
                     });
                 }
-            });
-        }
+            }
 
+            next();
+
+        } catch (error) {
+            logger.error('Device limit check error', {
+                error: error.message,
+                userId: req.user?.uuid
+            });
+
+            // 發生錯誤時不阻止請求
+            next();
+        }
+    }
+
+    // 記錄最後活動時間
+    static async updateLastActivity(req, res, next) {
+        if (req.user) {
+            try {
+                await AuthService.updateLastActivity(req.user.uuid, {
+                    ip: req.ip,
+                    userAgent: req.get('User-Agent'),
+                    path: req.path
+                });
+            } catch (error) {
+                logger.error('Update last activity error', {
+                    error: error.message,
+                    userId: req.user.uuid
+                });
+            }
+        }
         next();
     }
 }

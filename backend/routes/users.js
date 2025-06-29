@@ -1,18 +1,17 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
+const router = express.Router();
 const UserController = require('../controllers/userController');
 const AuthMiddleware = require('../middleware/auth');
 const ValidationMiddleware = require('../middleware/validation');
 const RateLimitMiddleware = require('../middleware/rateLimit');
 
-const router = express.Router();
 
-// 所有路由都需要認證
 router.use(AuthMiddleware.verifyToken);
 
 // 搜索用戶
 router.get('/search',
-    RateLimitMiddleware.searchLimiter,
+    RateLimitMiddleware.generalLimiter,
     [
         query('q')
             .trim()
@@ -32,6 +31,35 @@ router.get('/online',
     UserController.getOnlineUsers
 );
 
+// 獲取所有用戶（管理員）
+router.get('/',
+    AuthMiddleware.requireAdmin,
+    [
+        query('page')
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage('頁碼必須是正整數'),
+        query('limit')
+            .optional()
+            .isInt({ min: 1, max: 100 })
+            .withMessage('每頁數量必須在1-100之間'),
+        query('status')
+            .optional()
+            .isIn(['online', 'offline', 'away', 'busy', 'invisible', 'deleted'])
+            .withMessage('狀態值無效'),
+        query('role')
+            .optional()
+            .isIn(['admin', 'moderator', 'user', 'guest'])
+            .withMessage('角色值無效'),
+        query('search')
+            .optional()
+            .trim()
+            .isLength({ max: 100 })
+            .withMessage('搜索關鍵字不能超過100個字符')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    UserController.getAllUsers
+);
 // 更新當前用戶狀態
 router.put('/status',
     RateLimitMiddleware.generalLimiter,
@@ -46,7 +74,7 @@ router.put('/status',
 
 // 發送好友請求
 router.post('/friends/request',
-    RateLimitMiddleware.friendRequestLimiter,
+    RateLimitMiddleware.generalLimiter,
     [
         body('userId')
             .isUUID()
@@ -158,7 +186,6 @@ router.get('/blocked',
     ValidationMiddleware.handleValidationErrors,
     UserController.getBlockedUsers
 );
-
 // 獲取用戶資料
 router.get('/:userId',
     [
@@ -190,6 +217,16 @@ router.put('/:userId',
             .isEmail()
             .normalizeEmail()
             .withMessage('請提供有效的郵箱地址'),
+        body('displayName')
+            .optional()
+            .trim()
+            .isLength({ max: 50 })
+            .withMessage('顯示名稱不能超過50個字符'),
+        body('bio')
+            .optional()
+            .trim()
+            .isLength({ max: 200 })
+            .withMessage('個人簡介不能超過200個字符'),
         body('avatar')
             .optional()
             .isURL()
@@ -215,38 +252,7 @@ router.get('/:userId/stats',
     UserController.getUserStats
 );
 
-// 管理員路由
-// 獲取所有用戶
-router.get('/',
-    AuthMiddleware.requireAdmin,
-    [
-        query('page')
-            .optional()
-            .isInt({ min: 1 })
-            .withMessage('頁碼必須是正整數'),
-        query('limit')
-            .optional()
-            .isInt({ min: 1, max: 100 })
-            .withMessage('每頁數量必須在1-100之間'),
-        query('status')
-            .optional()
-            .isIn(['online', 'offline', 'away', 'busy', 'invisible', 'deleted'])
-            .withMessage('狀態值無效'),
-        query('role')
-            .optional()
-            .isIn(['admin', 'moderator', 'user', 'guest'])
-            .withMessage('角色值無效'),
-        query('search')
-            .optional()
-            .trim()
-            .isLength({ max: 100 })
-            .withMessage('搜索關鍵字不能超過100個字符')
-    ],
-    ValidationMiddleware.handleValidationErrors,
-    UserController.getAllUsers
-);
-
-// 刪除用戶（軟刪除）
+// 刪除用戶（軟刪除）- 管理員功能
 router.delete('/:userId',
     AuthMiddleware.requireAdmin,
     RateLimitMiddleware.sensitiveActionLimiter,
@@ -258,5 +264,75 @@ router.delete('/:userId',
     ValidationMiddleware.handleValidationErrors,
     UserController.deleteUser
 );
+
+// 封禁用戶（管理員）
+router.post('/:userId/ban',
+    AuthMiddleware.requireAdmin,
+    RateLimitMiddleware.sensitiveActionLimiter,
+    [
+        param('userId')
+            .isUUID()
+            .withMessage('用戶ID必須是有效的UUID'),
+        body('reason')
+            .trim()
+            .isLength({ min: 5, max: 200 })
+            .withMessage('封禁理由必須在5-200個字符之間'),
+        body('duration')
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage('封禁時長必須是正整數（小時）')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    UserController.banUser
+);
+
+// 解封用戶（管理員）
+router.post('/:userId/unban',
+    AuthMiddleware.requireAdmin,
+    RateLimitMiddleware.sensitiveActionLimiter,
+    [
+        param('userId')
+            .isUUID()
+            .withMessage('用戶ID必須是有效的UUID')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    UserController.unbanUser
+);
+
+// 設置用戶角色（管理員）
+router.put('/:userId/role',
+    AuthMiddleware.requireAdmin,
+    RateLimitMiddleware.sensitiveActionLimiter,
+    [
+        param('userId')
+            .isUUID()
+            .withMessage('用戶ID必須是有效的UUID'),
+        body('role')
+            .isIn(['user', 'moderator', 'admin'])
+            .withMessage('角色必須是 user、moderator 或 admin')
+    ],
+    ValidationMiddleware.handleValidationErrors,
+    UserController.setUserRole
+);
+// 404 處理
+router.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        error: '找不到請求的用戶端點',
+        path: req.originalUrl,
+        method: req.method
+    });
+});
+
+// 錯誤處理中間件
+router.use((error, req, res, next) => {
+    console.error('User route error:', error);
+
+    res.status(500).json({
+        success: false,
+        error: '用戶服務內部錯誤',
+        ...(process.env.NODE_ENV === 'development' && { details: error.message })
+    });
+});
 
 module.exports = router;
